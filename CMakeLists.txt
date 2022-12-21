@@ -16,6 +16,16 @@ if (USE_WIN32)
     add_compile_definitions(WIN32)
 endif()
 
+option(USE_OSXARM "macOS arm64" OFF)
+if (USE_OSXARM)
+    set(CMAKE_OSX_ARCHITECTURES arm64)
+endif()
+
+option(USE_OSXINTEL "macOS x86_64" OFF)
+if (USE_OSXINTEL)
+    set(CMAKE_OSX_ARCHITECTURES x86_64)
+endif()
+
 add_library(serum SHARED
         src/miniz/zip_file.hpp
         src/serum-decode.h

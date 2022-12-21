@@ -46,7 +46,15 @@ jobs:
             fi
             cmake --build build --config Release
           else
-            cmake -DCMAKE_BUILD_TYPE=Release -B build/Release
+            if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+              if [[ "${{ matrix.platform }}" == "macOS-arm64" ]]; then
+                cmake -DCMAKE_BUILD_TYPE=Release -B build/Release -DUSE_OSXARM=ON
+              else
+                cmake -DCMAKE_BUILD_TYPE=Release -B build/Release -DUSE_OSXINTEL=ON
+              fi
+            else
+              cmake -DCMAKE_BUILD_TYPE=Release -B build/Release
+            fi
             cmake --build build/Release
           fi
       - run: |
