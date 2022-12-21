@@ -10,7 +10,12 @@ Due to complicated dependency management on different platforms, these libraries
 * [miniz-cpp](https://github.com/tfussell/miniz-cpp) by Thomas Fussel
 
 ## Compiling
+
+#### Linux or macOS
 ```shell
 cmake -DCMAKE_BUILD_TYPE=Release -B build/Release
 cmake --build build/Release
 ```
+
+#### Windows
+Use Visual Studio.
