@@ -7,24 +7,9 @@ defaults:
     shell: bash
 
 jobs:
-  version:
-    name: Version
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - id: version
-        run: |
-          VERSION=$(grep -Eo "[0-9\.]+" CMakeLists.txt | head -2 | tail -1)
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
   build:
     name: Build libserum-${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
-    needs: [ version ]
     strategy:
       fail-fast: false
       matrix:
@@ -32,23 +17,23 @@ jobs:
           - os: windows-latest
             platform: win-x64
             platform-name: x64
-            libserum: libserum-${{ needs.version.outputs.version }}.dll
+            libserum: libserum.dll
           - os: windows-latest
             platform: win-x86
             platform-name: Win32
-            libserum: libserum-${{ needs.version.outputs.version }}.dll
+            libserum: libserum.dll
           - os: macos-latest
-            platform: osx-x64
-            libserum: libserum.${{ needs.version.outputs.version }}.dylib
+            platform: macOS-x64
+            libserum: libserum.dylib
           - os: macos-latest
-            platform: osx-arm64
-            libserum: libserum.${{ needs.version.outputs.version }}.dylib
+            platform: macOS-arm64
+            libserum: libserum.dylib
           - os: ubuntu-latest
             platform: linux-x64
-            libserum: libserum.so.${{ needs.version.outputs.version }}
+            libserum: libserum.so
           - os: ubuntu-latest
             platform: android-arm64-v8a
-            libserum: libserum.so.${{ needs.version.outputs.version }}
+            libserum: libserum.so
     steps:
       - uses: actions/checkout@v3
       - name: Build libserum-${{ matrix.platform }}
@@ -69,21 +54,21 @@ jobs:
           cp build/Release/${{ matrix.libserum }} tmp
       - uses: actions/upload-artifact@v3
         with:
-          name: libserum-${{ needs.version.outputs.tag }}-${{ matrix.platform }}
+          name: libserum-${{ matrix.platform }}
           path: tmp
 
   post-build:
     runs-on: macos-latest
     needs: [ version, build ]
-    name: Build libserum-osx
+    name: Build libserum-macOS
     steps:
       - uses: actions/download-artifact@v3
       - run: |
           mkdir tmp
-          lipo -create -output tmp/libserum.${{ needs.version.outputs.version }}.dylib \
-             libserum-${{ needs.version.outputs.tag }}-osx-x64/libserum.${{ needs.version.outputs.version }}.dylib \
-             libserum-${{ needs.version.outputs.tag }}-osx-arm64/libserum.${{ needs.version.outputs.version }}.dylib
+          lipo -create -output tmp/libserum.dylib \
+             libserum-macOS-x64/libserum.dylib \
+             libserum-macOS-arm64/libserum.dylib
       - uses: actions/upload-artifact@v3
         with:
-          name: libserum-${{ needs.version.outputs.tag }}-osx
+          name: libserum-macOS
           path: tmp
