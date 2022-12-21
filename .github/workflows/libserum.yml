@@ -17,11 +17,11 @@ jobs:
           - os: windows-latest
             platform: win-x64
             platform-name: x64
-            libserum: libserum.dll
+            libserum: serum.dll
           - os: windows-latest
             platform: win-x86
             platform-name: Win32
-            libserum: libserum.dll
+            libserum: serum.dll
           - os: macos-latest
             platform: macOS-x64
             libserum: libserum.dylib
