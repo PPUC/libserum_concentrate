@@ -4,11 +4,17 @@ project(serum VERSION 0.1.0 DESCRIPTION
         "Cross-platform library for decoding Serum files, a colorization format for pinball ROMs.")
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_VISIBILITY_PRESET hidden)
 
-include(GNUInstallDirs)
+option(USE_DLLEXPORTS "dll exports" OFF)
+if (USE_DLLEXPORTS)
+    add_compile_definitions(DLL_EXPORTS)
+endif()
+
+option(USE_WIN32 "Win32" OFF)
+if (USE_WIN32)
+    add_compile_definitions(WIN32)
+endif()
 
 add_library(serum SHARED
         src/miniz/zip_file.hpp
