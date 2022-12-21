@@ -2,9 +2,6 @@ name: libserum
 on:
   push:
 
-env:
-  VERSION_START_SHA: e87be0e3cfa66411976ca04a72dd29e36c483966
-
 defaults:
   run:
     shell: bash
@@ -46,13 +43,10 @@ jobs:
           - os: macos-latest
             platform: osx-arm64
             libserum: libserum.${{ needs.version.outputs.version }}.dylib
-          - os: macos-latest
-            platform: ios-arm64
-            libserum: libserum.${{ needs.version.outputs.version }}.a
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             platform: linux-x64
             libserum: libserum.so.${{ needs.version.outputs.version }}
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             platform: android-arm64-v8a
             libserum: libserum.${{ needs.version.outputs.version }}.so
     steps:
