@@ -59,7 +59,7 @@ jobs:
 
   post-build:
     runs-on: macos-latest
-    needs: [ version, build ]
+    needs: [ build ]
     name: Build libserum-macOS
     steps:
       - uses: actions/download-artifact@v3
