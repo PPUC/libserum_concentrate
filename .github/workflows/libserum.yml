@@ -48,7 +48,7 @@ jobs:
             libserum: libserum.so.${{ needs.version.outputs.version }}
           - os: ubuntu-latest
             platform: android-arm64-v8a
-            libserum: libserum.${{ needs.version.outputs.version }}.so
+            libserum: libserum.so.${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v3
       - name: Build libserum-${{ matrix.platform }}
