@@ -73,43 +73,43 @@ SparseVector<uint8_t> compmasks(0);
 SparseVector<uint8_t> movrcts(0);
 SparseVector<uint8_t> cpal(0);
 SparseVector<uint8_t> isextraframe(0);
-SparseVector<uint8_t> cframes(0);
-SparseVector<uint16_t> cframesn(0);
-SparseVector<uint16_t> cframesnx(0);
-SparseVector<uint8_t> dynamasks(255);
-SparseVector<uint8_t> dynamasksx(255);
-SparseVector<uint8_t> dyna4cols(0); // @todo: verifiy the default value
-SparseVector<uint16_t> dyna4colsn(0); // @todo: verifiy the default value
-SparseVector<uint16_t> dyna4colsnx(0); // @todo: verifiy the default value
-SparseVector<uint8_t> framesprites(255);
+SparseVector<uint8_t> cframes(0, true);
+SparseVector<uint16_t> cframesn(0, true);
+SparseVector<uint16_t> cframesnx(0, true);
+SparseVector<uint8_t> dynamasks(255, true);
+SparseVector<uint8_t> dynamasksx(255, true);
+SparseVector<uint8_t> dyna4cols(0, true); // @todo: verifiy the default value
+SparseVector<uint16_t> dyna4colsn(0, true); // @todo: verifiy the default value
+SparseVector<uint16_t> dyna4colsnx(0, true); // @todo: verifiy the default value
+SparseVector<uint8_t> framesprites(255, true);
 uint8_t* spritedescriptionso = NULL;
 uint8_t* spritedescriptionsc = NULL;
 SparseVector<uint8_t> isextrasprite(0);
 uint8_t* spriteoriginal = NULL;
-SparseVector<uint8_t> spritemaskx(255);
-SparseVector<uint16_t> spritecolored(0);
-SparseVector<uint16_t> spritecoloredx(0);
-SparseVector<uint8_t> activeframes(1); // use 1 as default, not 0. I assume, 1 will occur more often than 0.
-SparseVector<uint8_t> colorrotations(0);
-SparseVector<uint16_t> colorrotationsn(0);
-SparseVector<uint16_t> colorrotationsnx(0);
+SparseVector<uint8_t> spritemaskx(255, true);
+SparseVector<uint16_t> spritecolored(0, true);
+SparseVector<uint16_t> spritecoloredx(0, true);
+SparseVector<uint8_t> activeframes(1, true); // use 1 as default, not 0. I assume, 1 will occur more often than 0.
+SparseVector<uint8_t> colorrotations(0, true);
+SparseVector<uint16_t> colorrotationsn(0, true);
+SparseVector<uint16_t> colorrotationsnx(0, true);
 uint16_t* spritedetareas = NULL;
 uint32_t* spritedetdwords = NULL;
 uint16_t* spritedetdwordpos = NULL;
-SparseVector<uint32_t> triggerIDs(0xffffffff);
-SparseVector<uint16_t> framespriteBB(0);
+SparseVector<uint32_t> triggerIDs(0xffffffff, true);
+SparseVector<uint16_t> framespriteBB(0, true);
 SparseVector<uint8_t> isextrabackground(0);
-SparseVector<uint8_t> backgroundframes(0);
-SparseVector<uint16_t> backgroundframesn(0);
-SparseVector<uint16_t> backgroundframesnx(0);
-SparseVector<uint16_t> backgroundIDs(0xffff);
+SparseVector<uint8_t> backgroundframes(0, true);
+SparseVector<uint16_t> backgroundframesn(0, true);
+SparseVector<uint16_t> backgroundframesnx(0, true);
+SparseVector<uint16_t> backgroundIDs(0xffff, true);
 SparseVector<uint16_t> backgroundBB(0);
-SparseVector<uint8_t> backgroundmask(0);
-SparseVector<uint8_t> backgroundmaskx(0);
-SparseVector<uint8_t> dynashadowsdiro(0);
-SparseVector<uint16_t> dynashadowscolo(0);
-SparseVector<uint8_t> dynashadowsdirx(0);
-SparseVector<uint16_t> dynashadowscolx(0);
+SparseVector<uint8_t> backgroundmask(0, true);
+SparseVector<uint8_t> backgroundmaskx(0, true);
+SparseVector<uint8_t> dynashadowsdiro(0, true);
+SparseVector<uint16_t> dynashadowscolo(0, true);
+SparseVector<uint8_t> dynashadowsdirx(0, true);
+SparseVector<uint16_t> dynashadowscolx(0, true);
 
 // variables
 bool cromloaded = false;  // is there a crom loaded?
