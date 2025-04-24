@@ -6,40 +6,55 @@
 #include <cstring>
 #include <type_traits>
 #include <unordered_map>
-#include <utility>
 #include <vector>
-
-enum class SparseOptimization
-{
-	DENSE, // Always use full vectors (no InnerSparseVector)
-	SPARSE // Use InnerSparseVector when beneficial
-};
+#include <algorithm>
 
 template <typename T>
 class SparseVector
 {
 	static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
-				  "SparseVector only supports trivial types like uint8_t or uint16_t");
+				  "SparseVector only supports trivial types");
 
-	struct SparseElement
+	class InnerVector
 	{
-		std::vector<T> dense_data;
 		std::unordered_map<uint32_t, T> sparse_data;
+		std::vector<T> dense_data;
 		T noDataValue;
-		bool use_sparse = false;
+		bool sparse_mode;
 
-		SparseElement(T noData, size_t size, bool sparse_mode)
-			: noDataValue(noData), use_sparse(sparse_mode)
+		// Thread-local reconstruction buffer
+		static thread_local std::vector<T> temp_buffer;
+
+	public:
+		InnerVector(T noData, size_t size, bool sparse)
+			: noDataValue(noData), sparse_mode(sparse)
 		{
-			if (!use_sparse)
+			if (!sparse_mode)
 			{
 				dense_data.resize(size, noDataValue);
 			}
 		}
 
+		T &operator[](size_t idx)
+		{
+			if (sparse_mode)
+			{
+				temp_buffer.resize(dense_data.size(), noDataValue);
+				for (const auto &entry : sparse_data)
+				{
+					if (entry.first < temp_buffer.size())
+					{
+						temp_buffer[entry.first] = entry.second;
+					}
+				}
+				return temp_buffer[idx];
+			}
+			return dense_data[idx];
+		}
+
 		T *data()
 		{
-			if (use_sparse)
+			if (sparse_mode)
 			{
 				temp_buffer.resize(dense_data.size(), noDataValue);
 				for (const auto &entry : sparse_data)
@@ -54,79 +69,88 @@ class SparseVector
 			return dense_data.data();
 		}
 
-		void set(size_t index, T value)
+		void set(size_t idx, T value)
 		{
-			if (use_sparse)
+			if (sparse_mode)
 			{
 				if (value == noDataValue)
 				{
-					sparse_data.erase(index);
+					sparse_data.erase(idx);
 				}
 				else
 				{
-					sparse_data[index] = value;
+					sparse_data[idx] = value;
 				}
 			}
 			else
 			{
-				dense_data[index] = value;
+				dense_data[idx] = value;
 			}
 		}
 
 		bool empty() const
 		{
-			return use_sparse ? sparse_data.empty() : std::all_of(dense_data.begin(), dense_data.end(), [this](T val)
-																  { return val == noDataValue; });
+			return sparse_mode ? sparse_data.empty() : (dense_data.empty() || std::all_of(dense_data.begin(), dense_data.end(), [this](T v)
+																						  { return v == noDataValue; }));
 		}
-
-	private:
-		static thread_local std::vector<T> temp_buffer;
 	};
 
-protected:
 	std::vector<std::vector<T>> index;
-	std::unordered_map<uint32_t, SparseElement> data;
+	std::unordered_map<uint32_t, InnerVector> data;
 	std::vector<T> noData;
 	bool use_index = true;
-	SparseOptimization optimization = SparseOptimization::SPARSE;
+	bool sparse_optimization = true;
 
 public:
-	SparseVector(T noDataSignature, SparseOptimization opt = SparseOptimization::SPARSE)
-		: optimization(opt)
+	SparseVector(T noDataSignature, bool optimization = false)
+		: sparse_optimization(optimization)
 	{
 		noData.resize(1, noDataSignature);
 	}
 
-	void set_optimization(SparseOptimization opt)
+	// Unified operator[] that returns a proxy object
+	class Proxy
 	{
-		optimization = opt;
-	}
+		T *data;
+		size_t size;
+		T noDataValue;
 
-	T *operator[](const uint32_t elementId)
+	public:
+		Proxy(T *d, size_t s, T nd) : data(d), size(s), noDataValue(nd) {}
+
+		// Conversion to T* for [x] usage
+		operator T *() { return data; }
+
+		// [x][y] access
+		T &operator[](size_t idx)
+		{
+			return (idx < size) ? data[idx] : noDataValue;
+		}
+	};
+
+	// Single operator[] that handles both cases
+	Proxy operator[](uint32_t elementId)
 	{
 		if (use_index)
 		{
 			if (elementId >= index.size())
-				return noData.data();
-			return index[elementId].data();
+				return Proxy(noData.data(), noData.size(), noData[0]);
+			return Proxy(index[elementId].data(), index[elementId].size(), noData[0]);
 		}
-		else
-		{
-			auto it = data.find(elementId);
-			if (it == data.end())
-				return noData.data();
-			return it->second.data();
-		}
+		auto it = data.find(elementId);
+		if (it == data.end())
+			return Proxy(noData.data(), noData.size(), noData[0]);
+		return Proxy(it->second.data(), noData.size(), noData[0]);
 	}
 
+	// Public hasData method
 	bool hasData(uint32_t elementId) const
 	{
 		if (use_index)
-			return elementId < index.size() && !index[elementId].empty() &&
-				   index[elementId][0] != noData[0];
-
-		auto it = data.find(elementId);
-		return it != data.end() && !it->second.empty();
+		{
+			return elementId < index.size() && !index[elementId].empty();
+		}
+		return data.find(elementId) != data.end();
 	}
 
 	template <typename U = T>
@@ -145,36 +169,40 @@ public:
 
 		if (use_index)
 		{
-			index.resize(std::max<size_t>(index.size(), elementId + 1));
+			index.resize(std::max(index.size(), size_t(elementId + 1)));
 			index[elementId].assign(values, values + elementSize);
+			return;
 		}
-		else if (parent == nullptr || parent->hasData(elementId))
+
+		if (parent && !parent->hasData(elementId))
 		{
-			// Check if all elements are noData
-			if (memcmp(values, noData.data(), elementSize * sizeof(T)) == 0)
-			{
-				data.erase(elementId);
-				return;
-			}
+			return;
+		}
 
-			bool use_sparse = (optimization == SparseOptimization::SPARSE);
-			auto &elem = data.try_emplace(
-								 elementId, noData[0], elementSize, use_sparse)
-							 .first->second;
+		// Fast check for all-noData case
+		if (memcmp(values, noData.data(), elementSize * sizeof(T)) == 0)
+		{
+			data.erase(elementId);
+			return;
+		}
 
-			for (size_t i = 0; i < elementSize; ++i)
-			{
-				if (values[i] != noData[0])
-				{
-					elem.set(i, values[i]);
-				}
-			}
+		// Efficient insertion/update
+		auto result = data.try_emplace(
+			elementId,
+			noData[0],			// noDataValue
+			elementSize,		// size
+			sparse_optimization // sparse mode
+		);
 
-			// If empty after setting (shouldn't happen due to check above)
-			if (elem.empty())
-			{
-				data.erase(elementId);
-			}
+		InnerVector &vec = result.first->second;
+		for (size_t i = 0; i < elementSize; ++i)
+		{
+			vec.set(i, values[i]);
+		}
+
+		if (vec.empty())
+		{
+			data.erase(elementId);
 		}
 	}
 
@@ -206,4 +234,4 @@ public:
 };
 
 template <typename T>
-thread_local std::vector<T> SparseVector<T>::SparseElement::temp_buffer;
+thread_local std::vector<T> SparseVector<T>::InnerVector::temp_buffer;
