@@ -3,10 +3,10 @@
 #include "serum-decode.h"
 
 int main(int argc, const char* argv[]) {
-  /*int width;
+  int width;
   int height;
 
-  unsigned int numColors;
+  /*unsigned int numColors;
   unsigned int numTriggers;
 
   if (argc < 3) {

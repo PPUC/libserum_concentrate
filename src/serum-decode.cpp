@@ -988,7 +988,7 @@ bool Check_Sprites(uint8_t* Frame, uint32_t quelleframe, uint8_t* pquelsprites, 
 							{
 								pspx[*nspr] = (uint16_t)(sprx - (frax - minxBB)); // display sprite from point
 								pfrx[*nspr] = (uint16_t)minxBB;
-								pwid[*nspr] = (uint16_t)(spw - pspx[*nspr]);
+								pwid[*nspr] = MIN((uint16_t)(spw - pspx[*nspr]), (uint16_t)(maxxBB - minxBB + 1));
 							}
 							else
 							{
@@ -1000,7 +1000,7 @@ bool Check_Sprites(uint8_t* Frame, uint32_t quelleframe, uint8_t* pquelsprites, 
 							{
 								pspy[*nspr] = (uint16_t)(spry - (fray - minyBB));
 								pfry[*nspr] = (uint16_t)minyBB;
-								phei[*nspr] = (uint16_t)(sph - pspy[*nspr]);
+								phei[*nspr] = MIN((uint16_t)(sph - pspy[*nspr]), (uint16_t)(maxyBB - minyBB + 1));
 							}
 							else
 							{
