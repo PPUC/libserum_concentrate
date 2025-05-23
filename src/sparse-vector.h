@@ -132,6 +132,6 @@ public:
 	{
 		index.clear();
 		data.clear();
-		noData.clear();
+		noData.resize(1);
 	}
 };
