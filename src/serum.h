@@ -68,6 +68,7 @@ typedef struct _Serum_Frame_Struc
 
 const int MAX_DYNA_4COLS_PER_FRAME = 16;  // max number of color sets for dynamic content for each frame (old version)
 const int MAX_DYNA_SETS_PER_FRAMEN = 32;  // max number of color sets for dynamic content for each frame (new version)
+const int MAX_DYNA_SETS_PER_SPRITE = 9; // max number of color sets for dynamic content for each sprite
 const int MAX_SPRITE_SIZE = 128;  // maximum size of the sprites
 const int MAX_SPRITE_WIDTH = 256; // maximum width of the new sprites
 const int MAX_SPRITE_HEIGHT = 64; // maximum height of the new sprites
