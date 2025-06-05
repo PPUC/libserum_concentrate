@@ -110,10 +110,10 @@ SparseVector<uint8_t> dynashadowsdiro(0);
 SparseVector<uint16_t> dynashadowscolo(0);
 SparseVector<uint8_t> dynashadowsdirx(0);
 SparseVector<uint16_t> dynashadowscolx(0);
-uint16_t* dynasprite4cols = NULL;
-uint16_t* dynasprite4colsx = NULL;
-uint8_t* dynaspritemasks = NULL;
-uint8_t* dynaspritemasksx = NULL;
+SparseVector<uint16_t> dynasprite4cols(0);
+SparseVector<uint16_t> dynasprite4colsx(0);
+SparseVector<uint8_t> dynaspritemasks(0);
+SparseVector<uint8_t> dynaspritemasksx(0);
 
 // variables
 bool cromloaded = false;  // is there a crom loaded?
@@ -229,11 +229,11 @@ void Serum_free(void)
 	dynashadowscolo.clear();
 	dynashadowsdirx.clear();
 	dynashadowscolx.clear();
+	dynasprite4cols.clear();
+	dynasprite4colsx.clear();
+	dynaspritemasks.clear();
+	dynaspritemasksx.clear();
 	Free_element((void**)&framechecked);
-	Free_element((void**)&dynasprite4cols);
-	Free_element((void**)&dynasprite4colsx);
-	Free_element((void**)&dynaspritemasks);
-	Free_element((void**)&dynaspritemasksx);
 	Free_element((void**)&mySerum.frame);
 	Free_element((void**)&mySerum.frame32);
 	Free_element((void**)&mySerum.frame64);
@@ -566,10 +566,16 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 
 	if (sizeheader >= 18 * sizeof(uint32_t))
 	{
-		my_fread(dynasprite4cols, 2, nsprites * MAX_DYNA_SETS_PER_SPRITE * nocolors, pfile);
-		my_fread(dynasprite4colsx, 2, nsprites * MAX_DYNA_SETS_PER_SPRITE * nocolors, pfile);
-		my_fread(dynaspritemasks, 1, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, pfile);
-		my_fread(dynaspritemasksx, 1, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, pfile);
+		dynasprite4cols.my_fread(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile);
+		dynasprite4colsx.my_fread(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile, &isextraframe);
+		dynaspritemasks.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
+		dynaspritemasksx.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &isextraframe);
+	}
+	else {
+		dynasprite4cols.reserve(MAX_DYNA_SETS_PER_SPRITE * nocolors);
+		dynasprite4colsx.reserve(MAX_DYNA_SETS_PER_SPRITE * nocolors);
+		dynaspritemasks.reserve(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+		dynaspritemasksx.reserve(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 	}
 	fclose(pfile);
 
@@ -1353,10 +1359,9 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 			for (uint16_t ti = 0; ti < wid; ti++)
 			{
 				uint16_t tk = (fry + tj) * fwidth + frx + ti;
-				uint32_t tl = nosprite * MAX_SPRITE_HEIGHT * MAX_SPRITE_WIDTH + (tj + spy) * MAX_SPRITE_WIDTH + ti + spx;
-				uint8_t spriteref = spriteoriginal[tl];
+				uint8_t spriteref = spriteoriginal[nosprite * MAX_SPRITE_HEIGHT * MAX_SPRITE_WIDTH + (tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
 				if (spriteref < 255) {
-					uint8_t dynacouche = dynaspritemasks[tl];
+					uint8_t dynacouche = dynaspritemasks[nosprite][(tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
 					if (dynacouche == 255)
 					{
 						pfr[tk] = spritecolored[nosprite][(tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
@@ -1365,7 +1370,7 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 					}
 					else
 					{
-						pfr[tk] = dynasprite4cols[nosprite * MAX_DYNA_SETS_PER_SPRITE * nocolors + dynacouche * nocolors + spriteoriginal[tl]];
+						pfr[tk] = dynasprite4cols[nosprite][dynacouche * nocolors + spriteref];
 						if (ColorInRotation(IDfound, pfr[tk], &prot[tk * 2], &prot[tk * 2 + 1], false))
 							pfr[tk] = prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION + 2 + (prot[tk * 2 + 1] + cshft[prot[tk * 2]]) % prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION]];
 					}
@@ -1409,7 +1414,7 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 				uint16_t tk = (tfry + tj) * fwidthx + tfrx + ti;
 				if (spritemaskx[nosprite][(tj + tspy) * MAX_SPRITE_WIDTH + ti + tspx] < 255)
 				{
-					uint8_t dynacouche = dynaspritemasksx[(nosprite * MAX_SPRITE_HEIGHT + tj + tspy) * MAX_SPRITE_WIDTH + ti + tspx];
+					uint8_t dynacouche = dynaspritemasksx[nosprite][(tj + tspy) * MAX_SPRITE_WIDTH + ti + tspx];
 					if (dynacouche == 255)
 					{
 						pfr[tk] = spritecoloredx[nosprite][(tj + tspy) * MAX_SPRITE_WIDTH + ti + tspx];
@@ -1421,7 +1426,7 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 						uint16_t tl;
 						if (fheightx == 64) tl = (tj + fry) / 2 * fwidth + (ti + frx) / 2;
 						else tl = (tj + fry) * 2 * fwidth + (ti + frx) * 2;
-						pfr[tk] = dynasprite4colsx[(nosprite * MAX_DYNA_SETS_PER_SPRITE + dynacouche) * nocolors + spriteoriginal[tl]];
+						pfr[tk] = dynasprite4colsx[nosprite][dynacouche * nocolors + spriteoriginal[tl]];
 						if (ColorInRotation(IDfound, pfr[tk], &prot[tk * 2], &prot[tk * 2 + 1], true))
 							pfr[tk] = prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION + 2 + (prot[tk * 2 + 1] + cshft[prot[tk * 2]]) % prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION]];
 					}
