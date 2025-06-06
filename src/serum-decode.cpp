@@ -469,10 +469,6 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	spritedetdwords = (uint32_t*)malloc(nsprites * sizeof(uint32_t) * MAX_SPRITE_DETECT_AREAS);
 	spritedetdwordpos = (uint16_t*)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS);
 	spritedetareas = (uint16_t*)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS * 4);
-	dynasprite4cols = (uint16_t*)malloc(nsprites * MAX_DYNA_SETS_PER_SPRITE * nocolors * sizeof(uint16_t));
-	dynasprite4colsx = (uint16_t*)malloc(nsprites * MAX_DYNA_SETS_PER_SPRITE * nocolors * sizeof(uint16_t));
-	dynaspritemasks = (uint8_t*)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-	dynaspritemasksx = (uint8_t*)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 	if (flags & FLAG_REQUEST_32P_FRAMES)
 	{
 		mySerum.frame32 = (uint16_t*)malloc(32 * mySerum.width32 * sizeof(uint16_t));
