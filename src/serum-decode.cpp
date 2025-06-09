@@ -112,8 +112,8 @@ SparseVector<uint8_t> dynashadowsdirx(0);
 SparseVector<uint16_t> dynashadowscolx(0);
 SparseVector<uint16_t> dynasprite4cols(0);
 SparseVector<uint16_t> dynasprite4colsx(0);
-SparseVector<uint8_t> dynaspritemasks(0);
-SparseVector<uint8_t> dynaspritemasksx(0);
+SparseVector<uint8_t> dynaspritemasks(255);
+SparseVector<uint8_t> dynaspritemasksx(255);
 uint8_t* sprshapemode = NULL;
 
 // variables
@@ -1505,12 +1505,13 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 			for (uint16_t ti = 0; ti < wid; ti++)
 			{
 				uint16_t tk = (fry + tj) * fwidth + frx + ti;
-				uint8_t spriteref = spriteoriginal[nosprite * MAX_SPRITE_HEIGHT * MAX_SPRITE_WIDTH + (tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
+				uint32_t tl = (tj + spy) * MAX_SPRITE_WIDTH + ti + spx;
+				uint8_t spriteref = spriteoriginal[nosprite * MAX_SPRITE_HEIGHT * MAX_SPRITE_WIDTH + tl];
 				if (spriteref < 255) {
-					uint8_t dynacouche = dynaspritemasks[nosprite][(tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
+					uint8_t dynacouche = dynaspritemasks[nosprite][tl];
 					if (dynacouche == 255)
 					{
-						pfr[tk] = spritecolored[nosprite][(tj + spy) * MAX_SPRITE_WIDTH + ti + spx];
+						pfr[tk] = spritecolored[nosprite][tl];
 						if (ColorInRotation(IDfound, pfr[tk], &prot[tk * 2], &prot[tk * 2 + 1], false))
 							pfr[tk] = prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION + 2 + (prot[tk * 2 + 1] + cshft[prot[tk * 2]]) % prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION]];
 					}
