@@ -554,6 +554,7 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	backgroundIDs.my_fread(1, nframes, pfile);
 	backgroundmask.my_fread(fwidth * fheight, nframes, pfile, &backgroundIDs);
 	backgroundmaskx.my_fread(fwidthx * fheightx, nframes, pfile, &backgroundIDs);
+	memset(sprshapemode, 0, nsprites);
 	if (sizeheader >= 15 * sizeof(uint32_t))
 	{
 		dynashadowsdiro.my_fread(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile);
@@ -574,6 +575,29 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		dynasprite4colsx.my_fread(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile, &isextraframe);
 		dynaspritemasks.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
 		dynaspritemasksx.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &isextraframe);
+		if (sizeheader >= 19 * sizeof(uint32_t))
+		{
+			my_fread(sprshapemode, 1, nsprites, pfile);
+			for (uint32_t i = 0; i < nsprites; i++)
+			{
+				if (sprshapemode[i] > 0)
+				{
+					for (uint32_t j = 0;j < MAX_SPRITE_DETECT_AREAS;j++)
+					{
+						uint32_t detdwords = spritedetdwords[i * MAX_SPRITE_DETECT_AREAS + j];
+						if ((detdwords & 0xFF000000) > 0) detdwords = (detdwords & 0x00FFFFFF) | 0x01000000;
+						if ((detdwords & 0x00FF0000) > 0) detdwords = (detdwords & 0xFF00FFFF) | 0x00010000;
+						if ((detdwords & 0x0000FF00) > 0) detdwords = (detdwords & 0xFFFF00FF) | 0x00000100;
+						if ((detdwords & 0x000000FF) > 0) detdwords = (detdwords & 0xFFFFFF00) | 0x00000001;
+						spritedetdwords[i * MAX_SPRITE_DETECT_AREAS + j] = detdwords;
+					}
+					for (uint32_t j = i * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT; j < (i + 1) * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT; j++)
+					{
+						if (spriteoriginal[j] > 0 && spriteoriginal[j] != 255) spriteoriginal[j] = 1;
+					}
+				}
+			}
+		}
 	}
 	else {
 		dynasprite4cols.reserve(MAX_DYNA_SETS_PER_SPRITE * nocolors);
@@ -582,29 +606,6 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		dynaspritemasksx.reserve(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 	}
 
-	if (sizeheader >= 19 * sizeof(uint32_t))
-	{
-		my_fread(sprshapemode, 1, nsprites, pfile);
-		for (uint32_t i = 0; i < nsprites; i++)
-		{
-			if (sprshapemode[i] > 0)
-			{
-				for (uint32_t j = 0;j < MAX_SPRITE_DETECT_AREAS;j++)
-				{
-					uint32_t detdwords = spritedetdwords[i * MAX_SPRITE_DETECT_AREAS + j];
-					if ((detdwords & 0xFF000000) > 0) detdwords = (detdwords & 0x00FFFFFF) | 0x01000000;
-					if ((detdwords & 0x00FF0000) > 0) detdwords = (detdwords & 0xFF00FFFF) | 0x00010000;
-					if ((detdwords & 0x0000FF00) > 0) detdwords = (detdwords & 0xFFFF00FF) | 0x00000100;
-					if ((detdwords & 0x000000FF) > 0) detdwords = (detdwords & 0xFFFFFF00) | 0x00000001;
-					spritedetdwords[i * MAX_SPRITE_DETECT_AREAS + j] = detdwords;
-				}
-				for (uint32_t j = i * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT; j < (i + 1) * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT; j++)
-				{
-					if (spriteoriginal[j] > 0 && spriteoriginal[j] != 255) spriteoriginal[j] = 1;
-				}
-			}
-		}
-	}
 	fclose(pfile);
 
 	mySerum.ntriggers = 0;
