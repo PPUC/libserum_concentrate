@@ -47,6 +47,8 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 #endif
 #endif
 
+#define PUP_TRIGGER_REPEAT_TIMEOUT 500 // 500 ms
+
 #pragma warning(disable : 4996)
 
 const int pathbuflen = 4096;
@@ -122,6 +124,7 @@ uint16_t lastfound = 0;     // last frame ID identified
 uint32_t lastframe_full_crc = 0;
 uint32_t lastframe_found = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 uint32_t lasttriggerID = 0xffffffff;  // last trigger ID found
+uint32_t lasttriggerTimestamp = 0;
 bool isrotation = true;             // are there rotations to send
 bool crc32_ready = false;           // is the crc32 table filled?
 uint32_t crc32_table[256];            // initial table
@@ -1627,10 +1630,11 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 	// Let's first identify the incoming frame among the ones we have in the crom
 	uint32_t frameID = Identify_Frame(frame);
 	mySerum.frameID = IDENTIFY_NO_FRAME;
+	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
-		lastframe_found = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+		lastframe_found = now;
 		if (maxFramesToSkip)
 		{
 			framesSkippedCounter = 0;
@@ -1659,7 +1663,6 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 			}
 			}
 			memcpy(mySerum.rotations, colorrotations[lastfound], MAX_COLOR_ROTATIONS * 3);
-			uint32_t now = lastframe_found;
 			for (uint32_t ti = 0; ti < MAX_COLOR_ROTATIONS; ti++)
 			{
 				if (mySerum.rotations[ti * 3] == 255)
@@ -1679,12 +1682,14 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 				else if ((colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10 - now) < mySerum.rotationtimer) mySerum.rotationtimer = colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10 - now;
 				if (mySerum.rotationtimer <= 0) mySerum.rotationtimer = 10;
 			}
-			if (triggerIDs[lastfound][0] != lasttriggerID) lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
+			if (triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT)) {
+				lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
+				lasttriggerTimestamp = now;
+			}
 			return (int)mySerum.rotationtimer;  // new frame
 		}
 	}
 
-	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 	if ((ignoreUnknownFramesTimeout && (now - lastframe_found) >= ignoreUnknownFramesTimeout) || (maxFramesToSkip && (frameID == IDENTIFY_NO_FRAME) && (++framesSkippedCounter >= maxFramesToSkip)))
 	{
 		// apply standard palette
@@ -1711,11 +1716,12 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame)
 	// Let's first identify the incoming frame among the ones we have in the crom
 	uint32_t frameID = Identify_Frame(frame);
 	mySerum.frameID = IDENTIFY_NO_FRAME;
+	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
 		// frame identified
-		lastframe_found = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+		lastframe_found = now;
 		if (maxFramesToSkip)
 		{
 			framesSkippedCounter = 0;
@@ -1752,7 +1758,6 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame)
 				pcr32 = colorrotationsnx[lastfound];
 				pcr64 = colorrotationsn[lastfound];
 			}
-			uint32_t now = lastframe_found;
 			if (mySerum.frame32)
 			{
 				memcpy(mySerum.rotations32, pcr32, MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * 2);
@@ -1801,7 +1806,10 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame)
 					if (mySerum.rotationtimer <= 0) mySerum.rotationtimer = 10;
 				}
 			}
-			if (triggerIDs[lastfound][0] != lasttriggerID) lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
+			if (triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT)) {
+				lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
+				lasttriggerTimestamp = now;
+			}
 			return (uint32_t)mySerum.rotationtimer;  // new frame, return true
 		}
 	}
