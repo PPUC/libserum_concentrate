@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <lz4/lz4.h>
+#include <stdexcept>
 
 template <typename T>
 class SparseVector
@@ -17,20 +19,25 @@ class SparseVector
 
 protected:
 	std::vector<std::vector<T>> index;
-	std::unordered_map<uint32_t, std::vector<T>> data;
+	std::unordered_map<uint32_t, std::vector<uint8_t>> data; // Changed to uint8_t for compressed data
 	std::vector<T> noData;
+	size_t elementSize = 0; // Size of each element in bytes
+	std::vector<T> decompBuffer;
 	bool useIndex;
+	bool useCompression;
+	mutable uint32_t lastAccessedId = UINT32_MAX;
+	mutable std::vector<T> lastDecompressed;
 
 public:
-	SparseVector(T noDataSignature, bool index)
-		: useIndex(index)
+	SparseVector(T noDataSignature, bool index, bool compress = false)
+		: useIndex(index), useCompression(compress), lastAccessedId(UINT32_MAX)
 	{
 		noData.resize(1, noDataSignature);
 	}
 
 	SparseVector(T noDataSignature)
+		: useIndex(false), useCompression(false)
 	{
-		useIndex = false;
 		noData.resize(1, noDataSignature);
 	}
 
@@ -47,7 +54,38 @@ public:
 			auto it = data.find(elementId);
 			if (it == data.end())
 				return noData.data();
-			return it->second.data();
+
+			if (useCompression)
+			{
+				// Cache-Hit: Gleicher Index wie beim letzten Zugriff
+				if (elementId == lastAccessedId)
+				{
+					return lastDecompressed.data();
+				}
+
+				const auto &compressed = it->second;
+
+				// Stelle sicher, dass der Dekomprimierungspuffer groß genug ist
+				if (lastDecompressed.size() < elementSize)
+				{
+					lastDecompressed.resize(elementSize);
+				}
+
+				int decompressedSize = LZ4_decompress_safe(
+					reinterpret_cast<const char *>(compressed.data()),
+					reinterpret_cast<char *>(lastDecompressed.data()),
+					static_cast<int>(compressed.size()),
+					static_cast<int>(elementSize * sizeof(T)));
+
+				if (decompressedSize < 0)
+					return noData.data();
+
+				// Cache-Update
+				lastAccessedId = elementId;
+				return lastDecompressed.data();
+			}
+
+			return reinterpret_cast<T *>(it->second.data());
 		}
 	}
 
@@ -59,12 +97,18 @@ public:
 	}
 
 	template <typename U = T>
-	void set(uint32_t elementId, const T *values, size_t elementSize, SparseVector<U> *parent = nullptr)
+	void set(uint32_t elementId, const T *values, size_t size, SparseVector<U> *parent = nullptr)
 	{
 		if (useIndex)
 		{
-			fprintf(stderr, "set() must not be used for index\n");
-			exit(2);
+			throw std::runtime_error("set() must not be used for index");
+		}
+
+		elementSize = size;
+
+		if (decompBuffer.size() < (elementSize * sizeof(T)))
+		{
+			decompBuffer.resize(elementSize * sizeof(T));
 		}
 
 		if (noData.size() < elementSize)
@@ -76,8 +120,31 @@ public:
 		{
 			if (memcmp(values, noData.data(), elementSize * sizeof(T)) != 0)
 			{
-				// asign() takes a pointers to the first and the last element of the array
-				data[elementId].assign(values, values + elementSize);
+				if (useCompression)
+				{
+					const size_t maxCompressedSize = LZ4_compressBound(static_cast<int>(elementSize * sizeof(T)));
+
+					std::vector<uint8_t> compBuffer(maxCompressedSize);
+
+					int compressedSize = LZ4_compress_default(
+						reinterpret_cast<const char *>(values),
+						reinterpret_cast<char *>(compBuffer.data()),
+						static_cast<int>(elementSize * sizeof(T)),
+						static_cast<int>(maxCompressedSize));
+
+					if (compressedSize > 0)
+					{
+						data[elementId].assign(
+							compBuffer.begin(),
+							compBuffer.begin() + compressedSize);
+					}
+				}
+				else
+				{
+					// Without compression, store directly.
+					const uint8_t *byteValues = reinterpret_cast<const uint8_t *>(values);
+					data[elementId].assign(byteValues, byteValues + elementSize * sizeof(T));
+				}
 			}
 		}
 	}
@@ -133,5 +200,7 @@ public:
 		index.clear();
 		data.clear();
 		noData.resize(1);
+		lastAccessedId = UINT32_MAX;
+		lastDecompressed.clear();
 	}
 };

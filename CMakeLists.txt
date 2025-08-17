@@ -74,6 +74,8 @@ set(SERUM_SOURCES
    src/serum-decode.cpp
    third-party/include/miniz/miniz.h
    third-party/include/miniz/miniz.c
+   third-party/include/lz4/lz4.h
+   third-party/include/lz4/lz4.c
 )
 
 set(SERUM_INCLUDE_DIRS

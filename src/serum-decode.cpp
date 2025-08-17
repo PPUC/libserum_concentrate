@@ -56,6 +56,32 @@ const int pathbuflen = 4096;
 const uint32_t MAX_NUMBER_FRAMES = 0x7fffffff;
 const uint32_t IDENTIFY_SAME_FRAME = 0xfffffffe;
 
+const uint16_t greyscale_4[4] = {
+    0x0000,  // Black (0, 0, 0)
+    0x528A,  // Dark grey (~1/3 intensity)
+    0xAD55,  // Light grey (~2/3 intensity)
+    0xFFFF   // White (31, 63, 31)
+};
+
+const uint16_t greyscale_16[16] = {
+    0x0000,  // Black (0, 0, 0)
+    0x1082,  // 1/15
+    0x2104,  // 2/15
+    0x3186,  // 3/15
+    0x4208,  // 4/15
+    0x528A,  // 5/15
+    0x630C,  // 6/15
+    0x738E,  // 7/15
+    0x8410,  // 8/15
+    0x9492,  // 9/15
+    0xA514,  // 10/15
+    0xB596,  // 11/15
+    0xC618,  // 12/15
+    0xD69A,  // 13/15
+    0xE71C,  // 14/15
+    0xFFFF   // White (31, 63, 31)
+};
+
 // header
 char rname[64];
 uint8_t SerumVersion = 0;
@@ -75,11 +101,11 @@ SparseVector<uint8_t> compmasks(0);
 SparseVector<uint8_t> movrcts(0);
 SparseVector<uint8_t> cpal(0);
 SparseVector<uint8_t> isextraframe(0, true);
-SparseVector<uint8_t> cframes(0);
-SparseVector<uint16_t> cframesn(0);
-SparseVector<uint16_t> cframesnx(0);
-SparseVector<uint8_t> dynamasks(255);
-SparseVector<uint8_t> dynamasksx(255);
+SparseVector<uint8_t> cframes(0, false, true); // v1 colorized frames
+SparseVector<uint16_t> cframesn(0, false, true); // v2 colorized frames
+SparseVector<uint16_t> cframesnx(0, false, true); // v2 colorized frames with extra resolution
+SparseVector<uint8_t> dynamasks(255, false, true);
+SparseVector<uint8_t> dynamasksx(255, false, true);
 SparseVector<uint8_t> dyna4cols(0); // @todo: verifiy the default value
 SparseVector<uint16_t> dyna4colsn(0); // @todo: verifiy the default value
 SparseVector<uint16_t> dyna4colsnx(0); // @todo: verifiy the default value
@@ -101,13 +127,13 @@ uint16_t* spritedetdwordpos = NULL;
 SparseVector<uint32_t> triggerIDs(0xffffffff);
 SparseVector<uint16_t> framespriteBB(0);
 SparseVector<uint8_t> isextrabackground(0, true);
-SparseVector<uint8_t> backgroundframes(0);
-SparseVector<uint16_t> backgroundframesn(0);
-SparseVector<uint16_t> backgroundframesnx(0);
+SparseVector<uint8_t> backgroundframes(0, false, true);
+SparseVector<uint16_t> backgroundframesn(0, false, true);
+SparseVector<uint16_t> backgroundframesnx(0, false, true);
 SparseVector<uint16_t> backgroundIDs(0xffff);
 SparseVector<uint16_t> backgroundBB(0);
-SparseVector<uint8_t> backgroundmask(0);
-SparseVector<uint8_t> backgroundmaskx(0);
+SparseVector<uint8_t> backgroundmask(0, false, true);
+SparseVector<uint8_t> backgroundmaskx(0, false, true);
 SparseVector<uint8_t> dynashadowsdiro(0);
 SparseVector<uint16_t> dynashadowscolo(0);
 SparseVector<uint8_t> dynashadowsdirx(0);
@@ -1812,6 +1838,20 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame)
 			}
 			return (uint32_t)mySerum.rotationtimer;  // new frame, return true
 		}
+	}
+
+	if ((ignoreUnknownFramesTimeout && (now - lastframe_found) >= ignoreUnknownFramesTimeout) || (maxFramesToSkip && (frameID == IDENTIFY_NO_FRAME) && (++framesSkippedCounter >= maxFramesToSkip)))
+	{
+		// apply standard palette
+		memcpy(mySerum.palette, standardPalette, standardPaletteLength);
+
+		// disable render features like rotations
+		for (uint32_t ti = 0; ti < MAX_COLOR_ROTATIONN; ti++)
+		{
+			colorrotnexttime64[ti] = 0;
+		}
+		mySerum.rotationtimer = 0;
+		return 0;  // new but not colorized frame, return true
 	}
 
 	return IDENTIFY_NO_FRAME;  // no new frame, client has to update rotations!
