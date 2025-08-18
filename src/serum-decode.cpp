@@ -191,18 +191,26 @@ static std::string to_lower(const std::string& str)
 
 static std::optional<std::string> find_case_insensitive_file(const std::string& dir_path, const std::string& filename)
 {
-	if (!std::filesystem::exists(dir_path) || !std::filesystem::is_directory(dir_path))
-		return std::nullopt;
+    std::string path_copy = dir_path;  // make a copy to avoid modifying the original string
 
-	std::string lower_filename = to_lower(filename);
-	for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
-		if (entry.is_regular_file()) {
-			std::string entry_filename = entry.path().filename().string();
-			if (to_lower(entry_filename) == lower_filename)
-				return entry.path().string();
-		}
-	}
-	return std::nullopt;
+    if (!std::filesystem::exists(path_copy) || !std::filesystem::is_directory(path_copy))
+        return std::nullopt;
+
+    std::string lower_filename = to_lower(filename);
+
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(path_copy)) {
+            if (entry.is_regular_file()) {
+                std::string entry_filename = entry.path().filename().string();
+                if (to_lower(entry_filename) == lower_filename)
+                    return entry.path().string();
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        return std::nullopt;
+    }
+
+    return std::nullopt;
 }
 
 void Free_element(void** ppElement)
