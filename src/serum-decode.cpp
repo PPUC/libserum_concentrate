@@ -629,16 +629,9 @@ bool Serum_SaveConcentrate(const char *filename)
 
 	std::string concentratePath;
 
-	// Get directory from filename
-	if (const char* lastSlash = strrchr(filename, '/')) {
-		concentratePath = std::string(filename, lastSlash + 1);
-	} else {
-		concentratePath = filename;
-	}
-
 	// Remove extension and add .concentrate
-	if (const char* dot = strrchr(concentratePath.c_str(), '.')) {
-		concentratePath = std::string(concentratePath.c_str(), dot);
+	if (const char* dot = strrchr(filename, '.')) {
+		concentratePath = std::string(filename, dot);
 	}
 	concentratePath += ".concentrate";
 
