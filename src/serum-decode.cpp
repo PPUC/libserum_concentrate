@@ -633,7 +633,23 @@ bool Serum_SaveConcentrate(const char *filename)
 	if (const char* dot = strrchr(filename, '.')) {
 		concentratePath = std::string(filename, dot);
 	}
-	concentratePath += ".concentrate";
+
+	if (mySerum.flags & FLAG_REQUEST_32P_FRAMES && !(mySerum.flags & FLAG_REQUEST_64P_FRAMES))
+	{
+		concentratePath += ".sd.concentrate";
+	}
+	else if (!(mySerum.flags & FLAG_REQUEST_32P_FRAMES) && mySerum.flags & FLAG_REQUEST_64P_FRAMES)
+	{
+		concentratePath += ".hd.concentrate";
+	}
+	else if (mySerum.flags & FLAG_REQUEST_32P_FRAMES && mySerum.flags & FLAG_REQUEST_64P_FRAMES)
+	{
+		concentratePath += ".concentrate";
+	}
+	else
+	{
+		return false; // No valid frame request flags set
+	}
 
 	FILE *pfile = fopen(concentratePath.c_str(), "wb");
 	if (!pfile)
@@ -1146,8 +1162,15 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".concentrate");
-	if (pFoundFile) return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
+	std::optional<std::string> pFoundFile;
+
+	if (
+		(mySerum.flags & FLAG_REQUEST_32P_FRAMES && !(mySerum.flags & FLAG_REQUEST_64P_FRAMES) && (pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".sd.concentrate"))) ||
+		(!(mySerum.flags & FLAG_REQUEST_32P_FRAMES) && mySerum.flags & FLAG_REQUEST_64P_FRAMES && (pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".hd.concentrate"))) ||
+		(mySerum.flags & FLAG_REQUEST_32P_FRAMES && mySerum.flags & FLAG_REQUEST_64P_FRAMES && (pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".concentrate"))))
+	{
+		return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
+	}
 
 	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
 	if (!pFoundFile)
