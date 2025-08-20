@@ -491,33 +491,58 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	compmasks.loadFromStream(stream);
 	cpal.loadFromStream(stream);
 	isextraframe.loadFromStream(stream);
+	if (!isextrarequested) isextraframe.clearIndex();
 	cframes.loadFromStream(stream);
 	cframesn.loadFromStream(stream);
 	cframesnx.loadFromStream(stream);
+	cframesnx.setParent(&isextraframe);
 	dynamasks.loadFromStream(stream);
 	dynamasksx.loadFromStream(stream);
+	dynamasksx.setParent(&isextraframe);
 	dyna4cols.loadFromStream(stream);
 	dyna4colsn.loadFromStream(stream);
 	dyna4colsnx.loadFromStream(stream);
+	dyna4colsnx.setParent(&isextraframe);
 	framesprites.loadFromStream(stream);
 	isextrasprite.loadFromStream(stream);
+	if (!isextrarequested) isextrasprite.clearIndex();
 	spritemaskx.loadFromStream(stream);
+	spritemaskx.setParent(&isextrasprite);
 	spritecolored.loadFromStream(stream);
 	spritecoloredx.loadFromStream(stream);
+	spritecoloredx.setParent(&isextrasprite);
 	activeframes.loadFromStream(stream);
 	colorrotations.loadFromStream(stream);
 	colorrotationsn.loadFromStream(stream);
 	colorrotationsnx.loadFromStream(stream);
+	colorrotationsnx.setParent(&isextraframe);
 	triggerIDs.loadFromStream(stream);
 	framespriteBB.loadFromStream(stream);
+	framespriteBB.setParent(&framesprites);
 	isextrabackground.loadFromStream(stream);
+	if (!isextrarequested) isextrabackground.clearIndex();
 	backgroundframes.loadFromStream(stream);
 	backgroundframesn.loadFromStream(stream);
 	backgroundframesnx.loadFromStream(stream);
+	backgroundframesnx.setParent(&isextrabackground);
 	backgroundIDs.loadFromStream(stream);
 	backgroundBB.loadFromStream(stream);
 	backgroundmask.loadFromStream(stream);
+	backgroundmask.setParent(&backgroundIDs);
 	backgroundmaskx.loadFromStream(stream);
+	backgroundmaskx.setParent(&backgroundIDs);
+	dynashadowsdiro.loadFromStream(stream);
+	dynashadowscolo.loadFromStream(stream);
+	dynashadowsdirx.loadFromStream(stream);
+	dynashadowsdirx.setParent(&isextraframe);
+	dynashadowscolx.loadFromStream(stream);
+	dynashadowscolx.setParent(&isextraframe);
+	dynasprite4cols.loadFromStream(stream);
+	dynasprite4colsx.loadFromStream(stream);
+	dynasprite4colsx.setParent(&isextraframe);
+	dynaspritemasks.loadFromStream(stream);
+	dynaspritemasksx.loadFromStream(stream);
+	dynaspritemasksx.setParent(&isextraframe);
 
 	// Read raw arrays
 	if (nsprites > 0)
@@ -695,6 +720,14 @@ bool Serum_SaveConcentrate(const char *filename)
 	backgroundBB.saveToStream(stream);
 	backgroundmask.saveToStream(stream);
 	backgroundmaskx.saveToStream(stream);
+	dynashadowsdiro.saveToStream(stream);
+	dynashadowscolo.saveToStream(stream);
+	dynashadowsdirx.saveToStream(stream);
+	dynashadowscolx.saveToStream(stream);
+	dynasprite4cols.saveToStream(stream);
+	dynasprite4colsx.saveToStream(stream);
+	dynaspritemasks.saveToStream(stream);
+	dynaspritemasksx.saveToStream(stream);
 
 	// Write raw arrays
 	if (nsprites > 0)

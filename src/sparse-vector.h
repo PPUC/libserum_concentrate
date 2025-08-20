@@ -17,14 +17,12 @@ class LZ4Stream
 public:
 	static constexpr size_t CHUNK_SIZE = 64 * 1024;
 
-	LZ4Stream(FILE *file, bool writing, int compressionLevel = 12)  // Default auf maximale Kompression
+	LZ4Stream(FILE *file, bool writing, int compressionLevel = 12) // Default is max compression
 		: file_(file), writing_(writing), compressionLevel_(compressionLevel)
 	{
 		if (writing)
 		{
-			// Nutze HC (High Compression) Context statt normalem Stream
 			ctx_hc_ = LZ4_createStreamHC();
-			// Setze maximale Kompressionsstufe
 			LZ4_resetStreamHC(ctx_hc_, compressionLevel_);
 			outBuf_.resize(LZ4_COMPRESSBOUND(CHUNK_SIZE));
 		}
@@ -237,14 +235,15 @@ public:
 					std::vector<uint8_t> compBuffer(maxCompressedSize);
 
 					int compressedSize = LZ4_compress_HC(
-						reinterpret_cast<const char*>(values),
-						reinterpret_cast<char*>(compBuffer.data()),
+						reinterpret_cast<const char *>(values),
+						reinterpret_cast<char *>(compBuffer.data()),
 						static_cast<int>(elementSize * sizeof(T)),
 						static_cast<int>(maxCompressedSize),
-						12  // max compression level
+						12 // max compression level
 					);
 
-					if (compressedSize > 0) {
+					if (compressedSize > 0)
+					{
 						data[elementId].assign(
 							compBuffer.begin(),
 							compBuffer.begin() + compressedSize);
@@ -405,6 +404,33 @@ public:
 			}
 		}
 
+		lastAccessedId = UINT32_MAX;
+		lastDecompressed.clear();
+	}
+
+	template <typename U = T>
+	void setParent(SparseVector<U> *parent)
+	{
+		if (!parent || useIndex)
+		{
+			return; // Parent cannot be set for index-based vectors or if no parent is provided
+		}
+
+		std::unordered_map<uint32_t, std::vector<uint8_t>> filteredData;
+
+		for (const auto &entry : data)
+		{
+			uint32_t elementId = entry.first;
+
+			if (parent->hasData(elementId))
+			{
+				filteredData[elementId] = std::move(data[elementId]);
+			}
+		}
+
+		data = std::move(filteredData);
+
+		// Clear cache
 		lastAccessedId = UINT32_MAX;
 		lastDecompressed.clear();
 	}
