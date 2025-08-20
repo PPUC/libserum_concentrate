@@ -460,6 +460,8 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	if (!pfile)
 		return NULL;
 
+	LZ4Stream stream(pfile, false);
+
 	// Read and verify header
 	uint32_t magic;
 	fread(&magic, sizeof(uint32_t), 1, pfile);
@@ -486,59 +488,59 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	}
 
 	// Read header data
-	fread(&SerumVersion, sizeof(uint8_t), 1, pfile);
-	fread(&fwidth, sizeof(uint32_t), 1, pfile);
-	fread(&fheight, sizeof(uint32_t), 1, pfile);
-	fread(&fwidthx, sizeof(uint32_t), 1, pfile);
-	fread(&fheightx, sizeof(uint32_t), 1, pfile);
-	fread(&nframes, sizeof(uint32_t), 1, pfile);
-	fread(&nocolors, sizeof(uint32_t), 1, pfile);
-	fread(&nccolors, sizeof(uint32_t), 1, pfile);
-	fread(&ncompmasks, sizeof(uint32_t), 1, pfile);
-	fread(&nsprites, sizeof(uint32_t), 1, pfile);
-	fread(&nbackgrounds, sizeof(uint16_t), 1, pfile);
+	stream.read(&SerumVersion, sizeof(uint8_t));
+	stream.read(&fwidth, sizeof(uint32_t));
+	stream.read(&fheight, sizeof(uint32_t));
+	stream.read(&fwidthx, sizeof(uint32_t));
+	stream.read(&fheightx, sizeof(uint32_t));
+	stream.read(&nframes, sizeof(uint32_t));
+	stream.read(&nocolors, sizeof(uint32_t));
+	stream.read(&nccolors, sizeof(uint32_t));
+	stream.read(&ncompmasks, sizeof(uint32_t));
+	stream.read(&nsprites, sizeof(uint32_t));
+	stream.read(&nbackgrounds, sizeof(uint16_t));
 
 	// Read SparseVector data
-	hashcodes.loadFromFile(pfile);
-	shapecompmode.loadFromFile(pfile);
-	compmaskID.loadFromFile(pfile);
-	compmasks.loadFromFile(pfile);
-	cpal.loadFromFile(pfile);
-	isextraframe.loadFromFile(pfile);
-	cframes.loadFromFile(pfile);
-	cframesn.loadFromFile(pfile);
-	cframesnx.loadFromFile(pfile);
-	dynamasks.loadFromFile(pfile);
-	dynamasksx.loadFromFile(pfile);
-	dyna4cols.loadFromFile(pfile);
-	dyna4colsn.loadFromFile(pfile);
-	dyna4colsnx.loadFromFile(pfile);
-	framesprites.loadFromFile(pfile);
-	isextrasprite.loadFromFile(pfile);
-	spritemaskx.loadFromFile(pfile);
-	spritecolored.loadFromFile(pfile);
-	spritecoloredx.loadFromFile(pfile);
-	activeframes.loadFromFile(pfile);
-	colorrotations.loadFromFile(pfile);
-	colorrotationsn.loadFromFile(pfile);
-	colorrotationsnx.loadFromFile(pfile);
-	triggerIDs.loadFromFile(pfile);
-	framespriteBB.loadFromFile(pfile);
-	isextrabackground.loadFromFile(pfile);
-	backgroundframes.loadFromFile(pfile);
-	backgroundframesn.loadFromFile(pfile);
-	backgroundframesnx.loadFromFile(pfile);
-	backgroundIDs.loadFromFile(pfile);
-	backgroundBB.loadFromFile(pfile);
-	backgroundmask.loadFromFile(pfile);
-	backgroundmaskx.loadFromFile(pfile);
+	hashcodes.loadFromStream(stream);
+	shapecompmode.loadFromStream(stream);
+	compmaskID.loadFromStream(stream);
+	compmasks.loadFromStream(stream);
+	cpal.loadFromStream(stream);
+	isextraframe.loadFromStream(stream);
+	cframes.loadFromStream(stream);
+	cframesn.loadFromStream(stream);
+	cframesnx.loadFromStream(stream);
+	dynamasks.loadFromStream(stream);
+	dynamasksx.loadFromStream(stream);
+	dyna4cols.loadFromStream(stream);
+	dyna4colsn.loadFromStream(stream);
+	dyna4colsnx.loadFromStream(stream);
+	framesprites.loadFromStream(stream);
+	isextrasprite.loadFromStream(stream);
+	spritemaskx.loadFromStream(stream);
+	spritecolored.loadFromStream(stream);
+	spritecoloredx.loadFromStream(stream);
+	activeframes.loadFromStream(stream);
+	colorrotations.loadFromStream(stream);
+	colorrotationsn.loadFromStream(stream);
+	colorrotationsnx.loadFromStream(stream);
+	triggerIDs.loadFromStream(stream);
+	framespriteBB.loadFromStream(stream);
+	isextrabackground.loadFromStream(stream);
+	backgroundframes.loadFromStream(stream);
+	backgroundframesn.loadFromStream(stream);
+	backgroundframesnx.loadFromStream(stream);
+	backgroundIDs.loadFromStream(stream);
+	backgroundBB.loadFromStream(stream);
+	backgroundmask.loadFromStream(stream);
+	backgroundmaskx.loadFromStream(stream);
 
 	// Read raw arrays
-	fread(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, 1, pfile);
-	fread(spritedetdwords, sizeof(uint32_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
-	fread(spritedetdwordpos, sizeof(uint16_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
-	fread(spritedetareas, sizeof(uint16_t), nsprites * 4 * MAX_SPRITE_DETECT_AREAS, pfile);
-	fread(sprshapemode, nsprites, 1, pfile);
+	stream.read(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+	stream.read(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
+	stream.read(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
+	stream.read(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
+	stream.read(sprshapemode, nsprites);
 
 	fclose(pfile);
 
@@ -640,67 +642,69 @@ bool Serum_SaveConcentrate(const char *filename)
 	if (!pfile)
 		return false;
 
+	LZ4Stream stream(pfile, true);
+
 	// Write header
 	uint32_t magic = 0x434E4F43; // "CONC"
-	fwrite(&magic, sizeof(uint32_t), 1, pfile);
-	fwrite(&SerumVersion, sizeof(uint8_t), 1, pfile);
-	fwrite(&fwidth, sizeof(uint32_t), 1, pfile);
-	fwrite(&fheight, sizeof(uint32_t), 1, pfile);
-	fwrite(&fwidthx, sizeof(uint32_t), 1, pfile);
-	fwrite(&fheightx, sizeof(uint32_t), 1, pfile);
-	fwrite(&nframes, sizeof(uint32_t), 1, pfile);
-	fwrite(&nocolors, sizeof(uint32_t), 1, pfile);
-	fwrite(&nccolors, sizeof(uint32_t), 1, pfile);
-	fwrite(&ncompmasks, sizeof(uint32_t), 1, pfile);
-	fwrite(&nsprites, sizeof(uint32_t), 1, pfile);
-	fwrite(&nbackgrounds, sizeof(uint16_t), 1, pfile);
+	stream.write(&magic, sizeof(uint32_t));
+	stream.write(&SerumVersion, sizeof(uint8_t));
+	stream.write(&fwidth, sizeof(uint32_t));
+	stream.write(&fheight, sizeof(uint32_t));
+	stream.write(&fwidthx, sizeof(uint32_t));
+	stream.write(&fheightx, sizeof(uint32_t));
+	stream.write(&nframes, sizeof(uint32_t));
+	stream.write(&nocolors, sizeof(uint32_t));
+	stream.write(&nccolors, sizeof(uint32_t));
+	stream.write(&ncompmasks, sizeof(uint32_t));
+	stream.write(&nsprites, sizeof(uint32_t));
+	stream.write(&nbackgrounds, sizeof(uint16_t));
 
 	// Write SparseVector data
-	hashcodes.saveToFile(pfile);
-	shapecompmode.saveToFile(pfile);
-	compmaskID.saveToFile(pfile);
-	compmasks.saveToFile(pfile);
-	cpal.saveToFile(pfile);
-	isextraframe.saveToFile(pfile);
-	cframes.saveToFile(pfile);
-	cframesn.saveToFile(pfile);
-	cframesnx.saveToFile(pfile);
-	dynamasks.saveToFile(pfile);
-	dynamasksx.saveToFile(pfile);
-	dyna4cols.saveToFile(pfile);
-	dyna4colsn.saveToFile(pfile);
-	dyna4colsnx.saveToFile(pfile);
-	framesprites.saveToFile(pfile);
-	isextrasprite.saveToFile(pfile);
-	spritemaskx.saveToFile(pfile);
-	spritecolored.saveToFile(pfile);
-	spritecoloredx.saveToFile(pfile);
-	activeframes.saveToFile(pfile);
-	colorrotations.saveToFile(pfile);
-	colorrotationsn.saveToFile(pfile);
-	colorrotationsnx.saveToFile(pfile);
-	triggerIDs.saveToFile(pfile);
-	framespriteBB.saveToFile(pfile);
-	isextrabackground.saveToFile(pfile);
-	backgroundframes.saveToFile(pfile);
-	backgroundframesn.saveToFile(pfile);
-	backgroundframesnx.saveToFile(pfile);
-	backgroundIDs.saveToFile(pfile);
-	backgroundBB.saveToFile(pfile);
-	backgroundmask.saveToFile(pfile);
-	backgroundmaskx.saveToFile(pfile);
+	hashcodes.saveToStream(stream);
+	shapecompmode.saveToStream(stream);
+	compmaskID.saveToStream(stream);
+	compmasks.saveToStream(stream);
+	cpal.saveToStream(stream);
+	isextraframe.saveToStream(stream);
+	cframes.saveToStream(stream);
+	cframesn.saveToStream(stream);
+	cframesnx.saveToStream(stream);
+	dynamasks.saveToStream(stream);
+	dynamasksx.saveToStream(stream);
+	dyna4cols.saveToStream(stream);
+	dyna4colsn.saveToStream(stream);
+	dyna4colsnx.saveToStream(stream);
+	framesprites.saveToStream(stream);
+	isextrasprite.saveToStream(stream);
+	spritemaskx.saveToStream(stream);
+	spritecolored.saveToStream(stream);
+	spritecoloredx.saveToStream(stream);
+	activeframes.saveToStream(stream);
+	colorrotations.saveToStream(stream);
+	colorrotationsn.saveToStream(stream);
+	colorrotationsnx.saveToStream(stream);
+	triggerIDs.saveToStream(stream);
+	framespriteBB.saveToStream(stream);
+	isextrabackground.saveToStream(stream);
+	backgroundframes.saveToStream(stream);
+	backgroundframesn.saveToStream(stream);
+	backgroundframesnx.saveToStream(stream);
+	backgroundIDs.saveToStream(stream);
+	backgroundBB.saveToStream(stream);
+	backgroundmask.saveToStream(stream);
+	backgroundmaskx.saveToStream(stream);
 
 	// Write raw arrays
 	if (spriteoriginal)
-		fwrite(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, 1, pfile);
+		stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 	if (spritedetdwords)
-		fwrite(spritedetdwords, sizeof(uint32_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+		stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
 	if (spritedetdwordpos)
-		fwrite(spritedetdwordpos, sizeof(uint16_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+		stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
 	if (spritedetareas)
-		fwrite(spritedetareas, sizeof(uint16_t), nsprites * 4 * MAX_SPRITE_DETECT_AREAS, pfile);
+		stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
 	if (sprshapemode)
-		fwrite(sprshapemode, nsprites, 1, pfile);
+		stream.write(sprshapemode, nsprites);
 
 	fclose(pfile);
 	return true;

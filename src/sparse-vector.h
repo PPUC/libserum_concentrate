@@ -11,6 +11,111 @@
 #include <lz4/lz4.h>
 #include <stdexcept>
 
+class LZ4Stream
+{
+public:
+	LZ4Stream(FILE *file, bool writing, int compressionLevel = 0)
+		: file_(file), writing_(writing)
+	{
+		if (writing)
+		{
+			ctx_ = LZ4_createStream();
+			outBuf_.resize(LZ4_COMPRESSBOUND(CHUNK_SIZE));
+		}
+		else
+		{
+			dctx_ = LZ4_createStreamDecode();
+			inBuf_.resize(CHUNK_SIZE);
+		}
+	}
+
+	~LZ4Stream()
+	{
+		if (writing_)
+		{
+			flush();
+			LZ4_freeStream(ctx_);
+		}
+		else
+		{
+			LZ4_freeStreamDecode(dctx_);
+		}
+	}
+
+	bool write(const void *data, size_t size)
+	{
+		const char *src = static_cast<const char *>(data);
+		size_t remaining = size;
+
+		while (remaining > 0)
+		{
+			size_t chunk = std::min(remaining, CHUNK_SIZE);
+			int compressedSize = LZ4_compress_fast_continue(
+				ctx_, src, (char *)outBuf_.data(),
+				chunk, outBuf_.size(), 1);
+
+			if (compressedSize <= 0)
+				return false;
+
+			// Write compressed chunk size and data
+			uint32_t chunkSize = compressedSize;
+			if (fwrite(&chunkSize, sizeof(chunkSize), 1, file_) != 1)
+				return false;
+			if (fwrite(outBuf_.data(), 1, compressedSize, file_) != compressedSize)
+				return false;
+
+			src += chunk;
+			remaining -= chunk;
+		}
+		return true;
+	}
+
+	bool read(void *data, size_t size)
+	{
+		char *dst = static_cast<char *>(data);
+		size_t remaining = size;
+
+		while (remaining > 0)
+		{
+			uint32_t compressedSize;
+			if (fread(&compressedSize, sizeof(compressedSize), 1, file_) != 1)
+				return false;
+
+			if (fread(inBuf_.data(), 1, compressedSize, file_) != compressedSize)
+				return false;
+
+			size_t chunk = std::min(remaining, CHUNK_SIZE);
+			int decompressedSize = LZ4_decompress_safe_continue(
+				dctx_, (char *)inBuf_.data(), dst,
+				compressedSize, chunk);
+
+			if (decompressedSize <= 0)
+				return false;
+
+			dst += decompressedSize;
+			remaining -= decompressedSize;
+		}
+		return true;
+	}
+
+	void flush()
+	{
+		if (writing_)
+		{
+			// Final compression if needed
+		}
+	}
+
+private:
+	static const size_t CHUNK_SIZE = 64 * 1024;
+	FILE *file_;
+	bool writing_;
+	LZ4_stream_t *ctx_ = nullptr;
+	LZ4_streamDecode_t *dctx_ = nullptr;
+	std::vector<uint8_t> inBuf_;
+	std::vector<uint8_t> outBuf_;
+};
+
 template <typename T>
 class SparseVector
 {
@@ -204,103 +309,96 @@ public:
 		lastDecompressed.clear();
 	}
 
-	void saveToFile(FILE *pfile) const
+	void saveToStream(LZ4Stream &stream) const
 	{
 		// Flags
 		uint8_t flags = (useIndex ? 1 : 0) | (useCompression ? 2 : 0);
-		fwrite(&flags, sizeof(uint8_t), 1, pfile);
+		stream.write(&flags, sizeof(flags));
 
-		// Element size and default value (noData)
-		fwrite(&elementSize, sizeof(size_t), 1, pfile);
+		// Element size and default value
+		stream.write(&elementSize, sizeof(elementSize));
 		size_t noDataSize = noData.size();
-		fwrite(&noDataSize, sizeof(size_t), 1, pfile);
-		fwrite(noData.data(), sizeof(T), noDataSize, pfile);
+		stream.write(&noDataSize, sizeof(noDataSize));
+		stream.write(noData.data(), sizeof(T) * noDataSize);
 
 		if (useIndex)
 		{
-			// Save index-based data
 			size_t indexSize = index.size();
-			fwrite(&indexSize, sizeof(size_t), 1, pfile);
+			stream.write(&indexSize, sizeof(indexSize));
 			for (const auto &vec : index)
 			{
 				size_t vecSize = vec.size();
-				fwrite(&vecSize, sizeof(size_t), 1, pfile);
+				stream.write(&vecSize, sizeof(vecSize));
 				if (vecSize > 0)
 				{
-					fwrite(vec.data(), sizeof(T), vecSize, pfile);
+					stream.write(vec.data(), sizeof(T) * vecSize);
 				}
 			}
 		}
 		else
 		{
-			// Save map-based data
 			uint32_t count = data.size();
-			fwrite(&count, sizeof(uint32_t), 1, pfile);
-
+			stream.write(&count, sizeof(count));
 			for (const auto &entry : data)
 			{
-				fwrite(&entry.first, sizeof(uint32_t), 1, pfile);
+				stream.write(&entry.first, sizeof(entry.first));
 				size_t dataSize = entry.second.size();
-				fwrite(&dataSize, sizeof(size_t), 1, pfile);
-				fwrite(entry.second.data(), sizeof(uint8_t), dataSize, pfile);
+				stream.write(&dataSize, sizeof(dataSize));
+				stream.write(entry.second.data(), dataSize);
 			}
 		}
 	}
 
-	void loadFromFile(FILE *pfile)
+	void loadFromStream(LZ4Stream &stream)
 	{
 		clear();
 
 		// Flags
 		uint8_t flags;
-		fread(&flags, sizeof(uint8_t), 1, pfile);
+		stream.read(&flags, sizeof(flags));
 		useIndex = (flags & 1) != 0;
 		useCompression = (flags & 2) != 0;
 
-		// Element size and default value (noData)
-		fread(&elementSize, sizeof(size_t), 1, pfile);
+		// Element size and default value
+		stream.read(&elementSize, sizeof(elementSize));
 		size_t noDataSize;
-		fread(&noDataSize, sizeof(size_t), 1, pfile);
+		stream.read(&noDataSize, sizeof(noDataSize));
 		noData.resize(noDataSize);
-		fread(noData.data(), sizeof(T), noDataSize, pfile);
+		stream.read(noData.data(), sizeof(T) * noDataSize);
 
 		if (useIndex)
 		{
-			// Load index-based data
 			size_t indexSize;
-			fread(&indexSize, sizeof(size_t), 1, pfile);
+			stream.read(&indexSize, sizeof(indexSize));
 			index.resize(indexSize);
 			for (size_t i = 0; i < indexSize; i++)
 			{
 				size_t vecSize;
-				fread(&vecSize, sizeof(size_t), 1, pfile);
+				stream.read(&vecSize, sizeof(vecSize));
 				if (vecSize > 0)
 				{
 					index[i].resize(vecSize);
-					fread(index[i].data(), sizeof(T), vecSize, pfile);
+					stream.read(index[i].data(), sizeof(T) * vecSize);
 				}
 			}
 		}
 		else
 		{
-			// Load map-based data
 			uint32_t count;
-			fread(&count, sizeof(uint32_t), 1, pfile);
-
+			stream.read(&count, sizeof(count));
 			for (uint32_t i = 0; i < count; i++)
 			{
 				uint32_t key;
-				fread(&key, sizeof(uint32_t), 1, pfile);
+				stream.read(&key, sizeof(key));
 				size_t dataSize;
-				fread(&dataSize, sizeof(size_t), 1, pfile);
+				stream.read(&dataSize, sizeof(dataSize));
 
 				std::vector<uint8_t> dataBuf(dataSize);
-				fread(dataBuf.data(), sizeof(uint8_t), dataSize, pfile);
+				stream.read(dataBuf.data(), dataSize);
 				data[key] = std::move(dataBuf);
 			}
 		}
 
-		// Reset cache
 		lastAccessedId = UINT32_MAX;
 		lastDecompressed.clear();
 	}
