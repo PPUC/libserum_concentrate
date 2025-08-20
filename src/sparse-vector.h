@@ -56,7 +56,6 @@ public:
 		while (remaining > 0)
 		{
 			size_t chunk = std::min(remaining, CHUNK_SIZE);
-			// Nutze HC Kompression für bessere Kompressionsrate
 			int compressedSize = LZ4_compress_HC_continue(
 				ctx_hc_, src, (char *)outBuf_.data(),
 				chunk, outBuf_.size());
@@ -117,7 +116,7 @@ private:
 	FILE *file_;
 	bool writing_;
 	int compressionLevel_;
-	LZ4_streamHC_t *ctx_hc_ = nullptr;  // HC Context statt normalem Context
+	LZ4_streamHC_t *ctx_hc_ = nullptr;
 	LZ4_streamDecode_t *dctx_ = nullptr;
 	std::vector<uint8_t> inBuf_;
 	std::vector<uint8_t> outBuf_;
@@ -169,7 +168,7 @@ public:
 
 			if (useCompression)
 			{
-				// Cache-Hit: Gleicher Index wie beim letzten Zugriff
+				// Cache-Hit
 				if (elementId == lastAccessedId)
 				{
 					return lastDecompressed.data();
@@ -177,7 +176,7 @@ public:
 
 				const auto &compressed = it->second;
 
-				// Stelle sicher, dass der Dekomprimierungspuffer groß genug ist
+				// ensure decompBuffer is large enough
 				if (lastDecompressed.size() < elementSize)
 				{
 					lastDecompressed.resize(elementSize);
@@ -235,17 +234,17 @@ public:
 				if (useCompression)
 				{
 					const size_t maxCompressedSize = LZ4_compressBound(static_cast<int>(elementSize * sizeof(T)));
-
 					std::vector<uint8_t> compBuffer(maxCompressedSize);
 
-					int compressedSize = LZ4_compress_default(
-						reinterpret_cast<const char *>(values),
-						reinterpret_cast<char *>(compBuffer.data()),
+					int compressedSize = LZ4_compress_HC(
+						reinterpret_cast<const char*>(values),
+						reinterpret_cast<char*>(compBuffer.data()),
 						static_cast<int>(elementSize * sizeof(T)),
-						static_cast<int>(maxCompressedSize));
+						static_cast<int>(maxCompressedSize),
+						12  // max compression level
+					);
 
-					if (compressedSize > 0)
-					{
+					if (compressedSize > 0) {
 						data[elementId].assign(
 							compBuffer.begin(),
 							compBuffer.begin() + compressedSize);
