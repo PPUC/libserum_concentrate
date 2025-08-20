@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <lz4/lz4.h>
+#include <lz4/lz4hc.h>
 #include <stdexcept>
 
 class LZ4Stream
@@ -16,12 +17,15 @@ class LZ4Stream
 public:
 	static constexpr size_t CHUNK_SIZE = 64 * 1024;
 
-	LZ4Stream(FILE *file, bool writing, int compressionLevel = 0)
-		: file_(file), writing_(writing)
+	LZ4Stream(FILE *file, bool writing, int compressionLevel = 12)  // Default auf maximale Kompression
+		: file_(file), writing_(writing), compressionLevel_(compressionLevel)
 	{
 		if (writing)
 		{
-			ctx_ = LZ4_createStream();
+			// Nutze HC (High Compression) Context statt normalem Stream
+			ctx_hc_ = LZ4_createStreamHC();
+			// Setze maximale Kompressionsstufe
+			LZ4_resetStreamHC(ctx_hc_, compressionLevel_);
 			outBuf_.resize(LZ4_COMPRESSBOUND(CHUNK_SIZE));
 		}
 		else
@@ -36,7 +40,7 @@ public:
 		if (writing_)
 		{
 			flush();
-			LZ4_freeStream(ctx_);
+			LZ4_freeStreamHC(ctx_hc_);
 		}
 		else
 		{
@@ -52,9 +56,10 @@ public:
 		while (remaining > 0)
 		{
 			size_t chunk = std::min(remaining, CHUNK_SIZE);
-			int compressedSize = LZ4_compress_fast_continue(
-				ctx_, src, (char *)outBuf_.data(),
-				chunk, outBuf_.size(), 1);
+			// Nutze HC Kompression für bessere Kompressionsrate
+			int compressedSize = LZ4_compress_HC_continue(
+				ctx_hc_, src, (char *)outBuf_.data(),
+				chunk, outBuf_.size());
 
 			if (compressedSize <= 0)
 				return false;
@@ -111,7 +116,8 @@ public:
 private:
 	FILE *file_;
 	bool writing_;
-	LZ4_stream_t *ctx_ = nullptr;
+	int compressionLevel_;
+	LZ4_streamHC_t *ctx_hc_ = nullptr;  // HC Context statt normalem Context
 	LZ4_streamDecode_t *dctx_ = nullptr;
 	std::vector<uint8_t> inBuf_;
 	std::vector<uint8_t> outBuf_;

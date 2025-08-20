@@ -88,6 +88,8 @@ set(SERUM_SOURCES
    third-party/include/miniz/miniz.c
    third-party/include/lz4/lz4.h
    third-party/include/lz4/lz4.c
+   third-party/include/lz4/lz4hc.h
+   third-party/include/lz4/lz4hc.c
 )
 
 set(SERUM_INCLUDE_DIRS
