@@ -471,22 +471,6 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 		return NULL;
 	}
 
-	// Allocate memory for arrays
-	spriteoriginal = (uint8_t *)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-	spritedetdwords = (uint32_t *)malloc(nsprites * sizeof(uint32_t) * MAX_SPRITE_DETECT_AREAS);
-	spritedetdwordpos = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS);
-	spritedetareas = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS * 4);
-	sprshapemode = (uint8_t *)malloc(nsprites);
-	frameshape = (uint8_t *)malloc(fwidth * fheight);
-
-	if (!spriteoriginal || !spritedetdwords || !spritedetdwordpos ||
-		!spritedetareas || !sprshapemode || !frameshape)
-	{
-		Serum_free();
-		fclose(pfile);
-		return NULL;
-	}
-
 	// Read header data
 	stream.read(&SerumVersion, sizeof(uint8_t));
 	stream.read(&fwidth, sizeof(uint32_t));
@@ -536,11 +520,29 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	backgroundmaskx.loadFromStream(stream);
 
 	// Read raw arrays
-	stream.read(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-	stream.read(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
-	stream.read(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
-	stream.read(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
-	stream.read(sprshapemode, nsprites);
+	if (nsprites > 0)
+	{
+		spriteoriginal = (uint8_t *)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+		spritedetdwords = (uint32_t *)malloc(nsprites * sizeof(uint32_t) * MAX_SPRITE_DETECT_AREAS);
+		spritedetdwordpos = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS);
+		spritedetareas = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS * 4);
+		sprshapemode = (uint8_t *)malloc(nsprites);
+		frameshape = (uint8_t *)malloc(fwidth * fheight);
+
+		if (!spriteoriginal || !spritedetdwords || !spritedetdwordpos ||
+			!spritedetareas || !sprshapemode || !frameshape)
+		{
+			Serum_free();
+			fclose(pfile);
+			return NULL;
+		}
+
+		stream.read(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+		stream.read(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
+		stream.read(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
+		stream.read(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
+		stream.read(sprshapemode, nsprites);
+	}
 
 	fclose(pfile);
 
@@ -695,16 +697,19 @@ bool Serum_SaveConcentrate(const char *filename)
 	backgroundmaskx.saveToStream(stream);
 
 	// Write raw arrays
-	if (spriteoriginal)
-		stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-	if (spritedetdwords)
-		stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
-	if (spritedetdwordpos)
-		stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
-	if (spritedetareas)
-		stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
-	if (sprshapemode)
-		stream.write(sprshapemode, nsprites);
+	if (nsprites > 0)
+	{
+		if (spriteoriginal)
+			stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+		if (spritedetdwords)
+			stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
+		if (spritedetdwordpos)
+			stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
+		if (spritedetareas)
+			stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
+		if (sprshapemode)
+			stream.write(sprshapemode, nsprites);
+	}
 
 	fclose(pfile);
 	return true;
