@@ -464,7 +464,7 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 
 	// Read and verify header
 	uint32_t magic;
-	fread(&magic, sizeof(uint32_t), 1, pfile);
+	stream.read(&magic, sizeof(magic));
 	if (magic != 0x434E4F43)
 	{ // "CONC"
 		fclose(pfile);
