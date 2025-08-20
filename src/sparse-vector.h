@@ -203,4 +203,105 @@ public:
 		lastAccessedId = UINT32_MAX;
 		lastDecompressed.clear();
 	}
+
+	void saveToFile(FILE *pfile) const
+	{
+		// Flags
+		uint8_t flags = (useIndex ? 1 : 0) | (useCompression ? 2 : 0);
+		fwrite(&flags, sizeof(uint8_t), 1, pfile);
+
+		// Element size and default value (noData)
+		fwrite(&elementSize, sizeof(size_t), 1, pfile);
+		size_t noDataSize = noData.size();
+		fwrite(&noDataSize, sizeof(size_t), 1, pfile);
+		fwrite(noData.data(), sizeof(T), noDataSize, pfile);
+
+		if (useIndex)
+		{
+			// Save index-based data
+			size_t indexSize = index.size();
+			fwrite(&indexSize, sizeof(size_t), 1, pfile);
+			for (const auto &vec : index)
+			{
+				size_t vecSize = vec.size();
+				fwrite(&vecSize, sizeof(size_t), 1, pfile);
+				if (vecSize > 0)
+				{
+					fwrite(vec.data(), sizeof(T), vecSize, pfile);
+				}
+			}
+		}
+		else
+		{
+			// Save map-based data
+			uint32_t count = data.size();
+			fwrite(&count, sizeof(uint32_t), 1, pfile);
+
+			for (const auto &entry : data)
+			{
+				fwrite(&entry.first, sizeof(uint32_t), 1, pfile);
+				size_t dataSize = entry.second.size();
+				fwrite(&dataSize, sizeof(size_t), 1, pfile);
+				fwrite(entry.second.data(), sizeof(uint8_t), dataSize, pfile);
+			}
+		}
+	}
+
+	void loadFromFile(FILE *pfile)
+	{
+		clear();
+
+		// Flags
+		uint8_t flags;
+		fread(&flags, sizeof(uint8_t), 1, pfile);
+		useIndex = (flags & 1) != 0;
+		useCompression = (flags & 2) != 0;
+
+		// Element size and default value (noData)
+		fread(&elementSize, sizeof(size_t), 1, pfile);
+		size_t noDataSize;
+		fread(&noDataSize, sizeof(size_t), 1, pfile);
+		noData.resize(noDataSize);
+		fread(noData.data(), sizeof(T), noDataSize, pfile);
+
+		if (useIndex)
+		{
+			// Load index-based data
+			size_t indexSize;
+			fread(&indexSize, sizeof(size_t), 1, pfile);
+			index.resize(indexSize);
+			for (size_t i = 0; i < indexSize; i++)
+			{
+				size_t vecSize;
+				fread(&vecSize, sizeof(size_t), 1, pfile);
+				if (vecSize > 0)
+				{
+					index[i].resize(vecSize);
+					fread(index[i].data(), sizeof(T), vecSize, pfile);
+				}
+			}
+		}
+		else
+		{
+			// Load map-based data
+			uint32_t count;
+			fread(&count, sizeof(uint32_t), 1, pfile);
+
+			for (uint32_t i = 0; i < count; i++)
+			{
+				uint32_t key;
+				fread(&key, sizeof(uint32_t), 1, pfile);
+				size_t dataSize;
+				fread(&dataSize, sizeof(size_t), 1, pfile);
+
+				std::vector<uint8_t> dataBuf(dataSize);
+				fread(dataBuf.data(), sizeof(uint8_t), dataSize, pfile);
+				data[key] = std::move(dataBuf);
+			}
+		}
+
+		// Reset cache
+		lastAccessedId = UINT32_MAX;
+		lastDecompressed.clear();
+	}
 };

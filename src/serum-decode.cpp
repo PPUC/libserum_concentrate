@@ -445,15 +445,271 @@ uint32_t min(uint32_t v1, uint32_t v2)
 }
 
 long serum_file_length;
-FILE* fconsole;
-
-const bool IS_DEBUG_READ = false;
 
 size_t my_fread(void* pBuffer, size_t sizeElement, size_t nElements, FILE* stream)
 {
-	size_t readelem = fread(pBuffer, sizeElement, nElements, stream);
-	if (IS_DEBUG_READ) printf("sent elements: %llu / written elements: %llu / written bytes: %llu\r", nElements, readelem, readelem * sizeElement);
-	return readelem;
+	return fread(pBuffer, sizeElement, nElements, stream);
+}
+
+Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t flags)
+{
+	if (!crc32_ready)
+		CRC32encode();
+
+	FILE *pfile = fopen(filename, "rb");
+	if (!pfile)
+		return NULL;
+
+	// Read and verify header
+	uint32_t magic;
+	fread(&magic, sizeof(uint32_t), 1, pfile);
+	if (magic != 0x434E4F43)
+	{ // "CONC"
+		fclose(pfile);
+		return NULL;
+	}
+
+	// Allocate memory for arrays
+	spriteoriginal = (uint8_t *)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+	spritedetdwords = (uint32_t *)malloc(nsprites * sizeof(uint32_t) * MAX_SPRITE_DETECT_AREAS);
+	spritedetdwordpos = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS);
+	spritedetareas = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS * 4);
+	sprshapemode = (uint8_t *)malloc(nsprites);
+	frameshape = (uint8_t *)malloc(fwidth * fheight);
+
+	if (!spriteoriginal || !spritedetdwords || !spritedetdwordpos ||
+		!spritedetareas || !sprshapemode || !frameshape)
+	{
+		Serum_free();
+		fclose(pfile);
+		return NULL;
+	}
+
+	// Read header data
+	fread(&SerumVersion, sizeof(uint8_t), 1, pfile);
+	fread(&fwidth, sizeof(uint32_t), 1, pfile);
+	fread(&fheight, sizeof(uint32_t), 1, pfile);
+	fread(&fwidthx, sizeof(uint32_t), 1, pfile);
+	fread(&fheightx, sizeof(uint32_t), 1, pfile);
+	fread(&nframes, sizeof(uint32_t), 1, pfile);
+	fread(&nocolors, sizeof(uint32_t), 1, pfile);
+	fread(&nccolors, sizeof(uint32_t), 1, pfile);
+	fread(&ncompmasks, sizeof(uint32_t), 1, pfile);
+	fread(&nsprites, sizeof(uint32_t), 1, pfile);
+	fread(&nbackgrounds, sizeof(uint16_t), 1, pfile);
+
+	// Read SparseVector data
+	hashcodes.loadFromFile(pfile);
+	shapecompmode.loadFromFile(pfile);
+	compmaskID.loadFromFile(pfile);
+	compmasks.loadFromFile(pfile);
+	cpal.loadFromFile(pfile);
+	isextraframe.loadFromFile(pfile);
+	cframes.loadFromFile(pfile);
+	cframesn.loadFromFile(pfile);
+	cframesnx.loadFromFile(pfile);
+	dynamasks.loadFromFile(pfile);
+	dynamasksx.loadFromFile(pfile);
+	dyna4cols.loadFromFile(pfile);
+	dyna4colsn.loadFromFile(pfile);
+	dyna4colsnx.loadFromFile(pfile);
+	framesprites.loadFromFile(pfile);
+	isextrasprite.loadFromFile(pfile);
+	spritemaskx.loadFromFile(pfile);
+	spritecolored.loadFromFile(pfile);
+	spritecoloredx.loadFromFile(pfile);
+	activeframes.loadFromFile(pfile);
+	colorrotations.loadFromFile(pfile);
+	colorrotationsn.loadFromFile(pfile);
+	colorrotationsnx.loadFromFile(pfile);
+	triggerIDs.loadFromFile(pfile);
+	framespriteBB.loadFromFile(pfile);
+	isextrabackground.loadFromFile(pfile);
+	backgroundframes.loadFromFile(pfile);
+	backgroundframesn.loadFromFile(pfile);
+	backgroundframesnx.loadFromFile(pfile);
+	backgroundIDs.loadFromFile(pfile);
+	backgroundBB.loadFromFile(pfile);
+	backgroundmask.loadFromFile(pfile);
+	backgroundmaskx.loadFromFile(pfile);
+
+	// Read raw arrays
+	fread(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, 1, pfile);
+	fread(spritedetdwords, sizeof(uint32_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+	fread(spritedetdwordpos, sizeof(uint16_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+	fread(spritedetareas, sizeof(uint16_t), nsprites * 4 * MAX_SPRITE_DETECT_AREAS, pfile);
+	fread(sprshapemode, nsprites, 1, pfile);
+
+	fclose(pfile);
+
+	// Update mySerum structure
+	mySerum.SerumVersion = SerumVersion;
+	mySerum.flags = flags;
+	mySerum.nocolors = nocolors;
+
+	// Set requested frame types
+	isoriginalrequested = false;
+	isextrarequested = false;
+	mySerum.width32 = 0;
+	mySerum.width64 = 0;
+
+	if (fheight == 32)
+	{
+		if (flags & FLAG_REQUEST_32P_FRAMES)
+		{
+			isoriginalrequested = true;
+			mySerum.width32 = fwidth;
+		}
+		if (flags & FLAG_REQUEST_64P_FRAMES)
+		{
+			isextrarequested = true;
+			mySerum.width64 = fwidthx;
+		}
+	}
+	else
+	{
+		if (flags & FLAG_REQUEST_64P_FRAMES)
+		{
+			isoriginalrequested = true;
+			mySerum.width64 = fwidth;
+		}
+		if (flags & FLAG_REQUEST_32P_FRAMES)
+		{
+			isextrarequested = true;
+			mySerum.width32 = fwidthx;
+		}
+	}
+
+	if (flags & FLAG_REQUEST_32P_FRAMES)
+	{
+		mySerum.frame32 = (uint16_t *)malloc(32 * fwidth * sizeof(uint16_t));
+		mySerum.rotations32 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
+		mySerum.rotationsinframe32 = (uint16_t *)malloc(2 * 32 * fwidth * sizeof(uint16_t));
+		if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
+			mySerum.modifiedelements32 = (uint8_t *)malloc(32 * fwidth);
+	}
+
+	if (flags & FLAG_REQUEST_64P_FRAMES)
+	{
+		mySerum.frame64 = (uint16_t *)malloc(64 * fwidthx * sizeof(uint16_t));
+		mySerum.rotations64 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
+		mySerum.rotationsinframe64 = (uint16_t *)malloc(2 * 64 * fwidthx * sizeof(uint16_t));
+		if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
+			mySerum.modifiedelements64 = (uint8_t *)malloc(64 * fwidthx);
+	}
+
+	mySerum.ntriggers = 0;
+	for (uint32_t ti = 0; ti < nframes; ti++)
+	{
+		if (triggerIDs[ti][0] != 0xffffffff)
+		{
+			mySerum.ntriggers++;
+		}
+	}
+
+	// Allocate framechecked array
+	framechecked = (bool *)malloc(sizeof(bool) * nframes);
+	if (!framechecked)
+	{
+		Serum_free();
+		return NULL;
+	}
+
+	Full_Reset_ColorRotations();
+	cromloaded = true;
+	enabled = true;
+
+	return &mySerum;
+}
+
+bool Serum_SaveConcentrate(const char *filename)
+{
+	if (!cromloaded)
+		return false;
+
+	std::string concentratePath;
+
+	// Get directory from filename
+	if (const char* lastSlash = strrchr(filename, '/')) {
+		concentratePath = std::string(filename, lastSlash + 1);
+	} else {
+		concentratePath = filename;
+	}
+
+	// Remove extension and add .concentrate
+	if (const char* dot = strrchr(concentratePath.c_str(), '.')) {
+		concentratePath = std::string(concentratePath.c_str(), dot);
+	}
+	concentratePath += ".concentrate";
+
+	FILE *pfile = fopen(concentratePath.c_str(), "wb");
+	if (!pfile)
+		return false;
+
+	// Write header
+	uint32_t magic = 0x434E4F43; // "CONC"
+	fwrite(&magic, sizeof(uint32_t), 1, pfile);
+	fwrite(&SerumVersion, sizeof(uint8_t), 1, pfile);
+	fwrite(&fwidth, sizeof(uint32_t), 1, pfile);
+	fwrite(&fheight, sizeof(uint32_t), 1, pfile);
+	fwrite(&fwidthx, sizeof(uint32_t), 1, pfile);
+	fwrite(&fheightx, sizeof(uint32_t), 1, pfile);
+	fwrite(&nframes, sizeof(uint32_t), 1, pfile);
+	fwrite(&nocolors, sizeof(uint32_t), 1, pfile);
+	fwrite(&nccolors, sizeof(uint32_t), 1, pfile);
+	fwrite(&ncompmasks, sizeof(uint32_t), 1, pfile);
+	fwrite(&nsprites, sizeof(uint32_t), 1, pfile);
+	fwrite(&nbackgrounds, sizeof(uint16_t), 1, pfile);
+
+	// Write SparseVector data
+	hashcodes.saveToFile(pfile);
+	shapecompmode.saveToFile(pfile);
+	compmaskID.saveToFile(pfile);
+	compmasks.saveToFile(pfile);
+	cpal.saveToFile(pfile);
+	isextraframe.saveToFile(pfile);
+	cframes.saveToFile(pfile);
+	cframesn.saveToFile(pfile);
+	cframesnx.saveToFile(pfile);
+	dynamasks.saveToFile(pfile);
+	dynamasksx.saveToFile(pfile);
+	dyna4cols.saveToFile(pfile);
+	dyna4colsn.saveToFile(pfile);
+	dyna4colsnx.saveToFile(pfile);
+	framesprites.saveToFile(pfile);
+	isextrasprite.saveToFile(pfile);
+	spritemaskx.saveToFile(pfile);
+	spritecolored.saveToFile(pfile);
+	spritecoloredx.saveToFile(pfile);
+	activeframes.saveToFile(pfile);
+	colorrotations.saveToFile(pfile);
+	colorrotationsn.saveToFile(pfile);
+	colorrotationsnx.saveToFile(pfile);
+	triggerIDs.saveToFile(pfile);
+	framespriteBB.saveToFile(pfile);
+	isextrabackground.saveToFile(pfile);
+	backgroundframes.saveToFile(pfile);
+	backgroundframesn.saveToFile(pfile);
+	backgroundframesnx.saveToFile(pfile);
+	backgroundIDs.saveToFile(pfile);
+	backgroundBB.saveToFile(pfile);
+	backgroundmask.saveToFile(pfile);
+	backgroundmaskx.saveToFile(pfile);
+
+	// Write raw arrays
+	if (spriteoriginal)
+		fwrite(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, 1, pfile);
+	if (spritedetdwords)
+		fwrite(spritedetdwords, sizeof(uint32_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+	if (spritedetdwordpos)
+		fwrite(spritedetdwordpos, sizeof(uint16_t), nsprites * MAX_SPRITE_DETECT_AREAS, pfile);
+	if (spritedetareas)
+		fwrite(spritedetareas, sizeof(uint16_t), nsprites * 4 * MAX_SPRITE_DETECT_AREAS, pfile);
+	if (sprshapemode)
+		fwrite(sprshapemode, nsprites, 1, pfile);
+
+	fclose(pfile);
+	return true;
 }
 
 Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncompressedCROM, char* pathbuf, uint32_t sizeheader)
@@ -681,8 +937,6 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		remove(pathbuf);
 	}
 
-	if (IS_DEBUG_READ) fclose(fconsole);
-
 	enabled = true;
 	return &mySerum;
 }
@@ -730,20 +984,17 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 		return NULL;
 	}
 
-	if (IS_DEBUG_READ)
-	{
-		fconsole = freopen("e:\\output.txt", "w", stdout);
-		fseek(pfile, 0, SEEK_END);
-		serum_file_length = ftell(pfile);
-		fseek(pfile, 0, SEEK_SET);
-	}
-
 	// read the header to know how much memory is needed
 	my_fread(rname, 1, 64, pfile);
 	uint32_t sizeheader;
 	my_fread(&sizeheader, 4, 1, pfile);
 	// if this is a new format file, we load with Serum_LoadNewFile()
-	if (sizeheader >= 14 * sizeof(uint32_t)) return Serum_LoadFilev2(pfile, flags, uncompressedCROM, pathbuf, sizeheader);
+	if (sizeheader >= 14 * sizeof(uint32_t))
+	{
+		Serum_Frame_Struc* result = Serum_LoadFilev2(pfile, flags, uncompressedCROM, pathbuf, sizeheader);
+		Serum_SaveConcentrate(filename);
+		return result;
+	}
 	mySerum.SerumVersion = SerumVersion = SERUM_V1;
 	my_fread(&fwidth, 4, 1, pfile);
 	my_fread(&fheight, 4, 1, pfile);
@@ -845,8 +1096,6 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	}
 	fclose(pfile);
 
-	if (IS_DEBUG_READ) fclose(fconsole);
-
 	// allocate memory for previous detected frame
 	framechecked = (bool*)malloc(sizeof(bool) * nframes);
 	if (!framechecked)
@@ -874,12 +1123,16 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 		remove(pathbuf);
 	}
 
+	Serum_SaveConcentrate(filename);
+
 	enabled = true;
 	return &mySerum;
 }
 
 SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
 {
+	cromloaded = false;
+
 	mySerum.SerumVersion = SerumVersion = 0;
 	mySerum.flags = 0;
 	mySerum.frame = NULL;
@@ -900,7 +1153,10 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
+	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".concentrate");
+	if (pFoundFile) return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
+
+	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
 	if (!pFoundFile)
 		pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cRZ");
 	if (!pFoundFile) {
