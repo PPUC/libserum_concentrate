@@ -14,6 +14,8 @@
 class LZ4Stream
 {
 public:
+	static constexpr size_t CHUNK_SIZE = 64 * 1024;
+
 	LZ4Stream(FILE *file, bool writing, int compressionLevel = 0)
 		: file_(file), writing_(writing)
 	{
@@ -107,7 +109,6 @@ public:
 	}
 
 private:
-	static const size_t CHUNK_SIZE = 64 * 1024;
 	FILE *file_;
 	bool writing_;
 	LZ4_stream_t *ctx_ = nullptr;
