@@ -1189,13 +1189,13 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
-
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".concentrate");
 	if (pFoundFile)
 	{
 		return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
 	}
+
+	flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
 
 	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
 	if (!pFoundFile)
