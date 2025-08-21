@@ -2073,7 +2073,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 	mySerum.triggerID = 0xffffffff;
 	mySerum.frameID = IDENTIFY_NO_FRAME;
 
-	if (!sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
+	if (sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
 	{
 		// Scene is active and not interruptable
 		return IDENTIFY_NO_FRAME;
@@ -2102,13 +2102,16 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		if (frameID == IDENTIFY_SAME_FRAME) return IDENTIFY_NO_FRAME;
 
 		mySerum.frameID = frameID;
-		mySerum.rotationtimer = 0;
+		if (!sceneFrameRequested)
+		{
+			mySerum.rotationtimer = 0;
+		}
 
 		if (!sceneFrameRequested && (triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
 			lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
 
-            if (lasttriggerID < 0xffffffff)
+            if (sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
             {
                 if (sceneGenerator->getSceneInfo(lasttriggerID, sceneFrameCount, sceneDurationPerFrame,
                                                sceneInterruptable, sceneStartImmediately, sceneRepeatCount,
@@ -2303,7 +2306,7 @@ uint32_t Calc_Next_Rotationv2(uint32_t now)
 
 uint32_t Serum_ApplyRotationsv2(void)
 {
-	if (sceneCurrentFrame < sceneFrameCount)
+	if (sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
 	{
 		uint8_t frame[4096] = { 0 };
 		if (sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, frame))
