@@ -62,3 +62,72 @@ SERUM_API const char* Serum_GetVersion(void);
 */
 SERUM_API const char* Serum_GetMinorVersion(void);
 
+/** @brief Parse a scene description file in CSV format
+ *
+ * @param csv_filename: Path to the CSV file containing scene descriptions
+ * @return true if parsing was successful
+ */
+SERUM_API bool Serum_Scene_ParseCSV(const char* const csv_filename);
+
+/** @brief Generate a dump of scene data
+ *
+ * @param dump_filename: Path where to save the dump
+ * @param id: Scene ID to dump (-1 for all scenes)
+ * @return true if dump was successful
+ */
+SERUM_API bool Serum_Scene_GenerateDump(const char* const dump_filename, int id);
+
+/** @brief Get scene ID for given parameters
+ *
+ * @param source: Source of the event
+ * @param event: Event type
+ * @param value: Event value
+ * @return Scene ID or 0 if not found
+ */
+SERUM_API uint16_t Serum_Scene_GetId(char source, int event, int value);
+
+/** @brief Get information about a scene
+ *
+ * @param sceneId: ID of the scene
+ * @param frameCount: Receives number of frames
+ * @param durationPerFrame: Receives duration per frame
+ * @param interruptable: Receives if scene can be interrupted
+ * @param startImmediately: Receives if scene starts immediately
+ * @param repeat: Receives repeat count
+ * @param endFrame: Receives end frame behavior
+ * @return true if scene info was found
+ */
+SERUM_API bool Serum_Scene_GetInfo(int sceneId, int* frameCount, int* durationPerFrame, bool* interruptable,
+                                  bool* startImmediately, int* repeat, int* endFrame);
+
+/** @brief Generate a frame for a scene
+ *
+ * @param sceneId: ID of the scene
+ * @param frameIndex: Index of the frame to generate
+ * @param buffer: Buffer to receive the frame data
+ * @param group: Group number (-1 for default)
+ * @return true if frame was generated
+ */
+SERUM_API bool Serum_Scene_GenerateFrame(int sceneId, int frameIndex, uint8_t* buffer, int group);
+
+/** @brief Set rendering depth for scenes
+ *
+ * @param depth: New rendering depth
+ */
+SERUM_API void Serum_Scene_SetDepth(int depth);
+
+/** @brief Get current rendering depth
+ *
+ * @return Current rendering depth
+ */
+SERUM_API int Serum_Scene_GetDepth(void);
+
+/** @brief Check if scene generator is active
+ *
+ * @return true if scene generator is active
+ */
+SERUM_API bool Serum_Scene_IsActive(void);
+
+/** @brief Reset scene generator to initial state
+ */
+SERUM_API void Serum_Scene_Reset(void);

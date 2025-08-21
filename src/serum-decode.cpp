@@ -2412,3 +2412,48 @@ SERUM_API void Serum_EnableColorization()
 {
 	enabled = true;
 }
+
+SERUM_API bool Serum_Scene_ParseCSV(const char* const csv_filename) {
+    if (!sceneGenerator) return false;
+    return sceneGenerator->parseCSV(csv_filename);
+}
+
+SERUM_API bool Serum_Scene_GenerateDump(const char* const dump_filename, int id) {
+    if (!sceneGenerator) return false;
+    return sceneGenerator->generateDump(dump_filename, id);
+}
+
+SERUM_API uint16_t Serum_Scene_GetId(char source, int event, int value) {
+    if (!sceneGenerator) return 0;
+    return sceneGenerator->getSceneId(source, event, value);
+}
+
+SERUM_API bool Serum_Scene_GetInfo(int sceneId, int* frameCount, int* durationPerFrame, bool* interruptable,
+                                  bool* startImmediately, int* repeat, int* endFrame) {
+    if (!sceneGenerator) return false;
+    return sceneGenerator->getSceneInfo(sceneId, *frameCount, *durationPerFrame, *interruptable,
+                                      *startImmediately, *repeat, *endFrame);
+}
+
+SERUM_API bool Serum_Scene_GenerateFrame(int sceneId, int frameIndex, uint8_t* buffer, int group) {
+    if (!sceneGenerator) return false;
+    return sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group);
+}
+
+SERUM_API void Serum_Scene_SetDepth(int depth) {
+    if (sceneGenerator) sceneGenerator->setDepth(depth);
+}
+
+SERUM_API int Serum_Scene_GetDepth(void) {
+    if (!sceneGenerator) return 0;
+    return sceneGenerator->getDepth();
+}
+
+SERUM_API bool Serum_Scene_IsActive(void) {
+    if (!sceneGenerator) return false;
+    return sceneGenerator->isActive();
+}
+
+SERUM_API void Serum_Scene_Reset(void) {
+    if (sceneGenerator) sceneGenerator->Reset();
+}
