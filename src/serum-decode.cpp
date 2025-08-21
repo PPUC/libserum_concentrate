@@ -51,7 +51,7 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 
 #pragma warning(disable : 4996)
 
-SceneGenerator* sceneGenerator;
+SceneGenerator* sceneGenerator = new SceneGenerator();
 int sceneFrameCount = 0;
 int sceneCurrentFrame = 0;
 int sceneDurationPerFrame = 0;
