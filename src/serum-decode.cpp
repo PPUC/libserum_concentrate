@@ -59,6 +59,7 @@ bool sceneInterruptable = false;
 bool sceneStartImmediately = false;
 int sceneRepeatCount = 0;
 int sceneEndFrame = 0;
+uint8_t sceneFrame[4096] = { 0 };
 
 const int pathbuflen = 4096;
 
@@ -504,7 +505,17 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	compmasks.loadFromStream(stream);
 	cpal.loadFromStream(stream);
 	isextraframe.loadFromStream(stream);
-	if (!isextrarequested) isextraframe.clearIndex();
+	if (isextrarequested) {
+		for (uint32_t ti = 0; ti < nframes; ti++)
+		{
+			if (isextraframe[ti][0] > 0)
+			{
+				mySerum.flags |= FLAG_RETURNED_EXTRA_AVAILABLE;
+				break;
+			}
+		}
+	}
+	else isextraframe.clearIndex();
 	cframes.loadFromStream(stream);
 	cframesn.loadFromStream(stream);
 	cframesnx.loadFromStream(stream);
@@ -560,26 +571,49 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	// Read raw arrays
 	if (nsprites > 0)
 	{
-		spriteoriginal = (uint8_t *)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 		spritedetdwords = (uint32_t *)malloc(nsprites * sizeof(uint32_t) * MAX_SPRITE_DETECT_AREAS);
 		spritedetdwordpos = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS);
 		spritedetareas = (uint16_t *)malloc(nsprites * sizeof(uint16_t) * MAX_SPRITE_DETECT_AREAS * 4);
-		sprshapemode = (uint8_t *)malloc(nsprites);
-		frameshape = (uint8_t *)malloc(fwidth * fheight);
-
-		if (!spriteoriginal || !spritedetdwords || !spritedetdwordpos ||
-			!spritedetareas || !sprshapemode || !frameshape)
+		if (!spritedetdwords || !spritedetdwordpos || !spritedetareas)
 		{
 			Serum_free();
 			fclose(pfile);
+			enabled = false;
 			return NULL;
 		}
-
-		stream.read(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 		stream.read(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
 		stream.read(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
 		stream.read(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
-		stream.read(sprshapemode, nsprites);
+
+		if (SERUM_V2 == SerumVersion)
+		{
+			spriteoriginal = (uint8_t *)malloc(nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+			sprshapemode = (uint8_t *)malloc(nsprites);
+			if (!spriteoriginal || !sprshapemode)
+			{
+				Serum_free();
+				fclose(pfile);
+				enabled = false;
+				return NULL;
+			}
+			stream.read(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+			stream.read(sprshapemode, nsprites);
+		}
+		else if (SERUM_V1 == SerumVersion)
+		{
+			spritedescriptionso = (uint8_t*)malloc(nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+			spritedescriptionsc = (uint8_t*)malloc(nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+			if (
+				!spritedescriptionso || !spritedescriptionsc)
+			{
+				Serum_free();
+				fclose(pfile);
+				enabled = false;
+				return NULL;
+			}
+			stream.read(spritedescriptionso, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+			stream.read(spritedescriptionsc, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+		}
 	}
 
 	fclose(pfile);
@@ -595,49 +629,84 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	mySerum.width32 = 0;
 	mySerum.width64 = 0;
 
-	if (fheight == 32)
+	if (SERUM_V2 == SerumVersion)
 	{
+		if (fheight == 32)
+		{
+			if (flags & FLAG_REQUEST_32P_FRAMES)
+			{
+				isoriginalrequested = true;
+				mySerum.width32 = fwidth;
+			}
+			if (flags & FLAG_REQUEST_64P_FRAMES)
+			{
+				isextrarequested = true;
+				mySerum.width64 = fwidthx;
+			}
+		}
+		else
+		{
+			if (flags & FLAG_REQUEST_64P_FRAMES)
+			{
+				isoriginalrequested = true;
+				mySerum.width64 = fwidth;
+			}
+			if (flags & FLAG_REQUEST_32P_FRAMES)
+			{
+				isextrarequested = true;
+				mySerum.width32 = fwidthx;
+			}
+		}
+
 		if (flags & FLAG_REQUEST_32P_FRAMES)
 		{
-			isoriginalrequested = true;
-			mySerum.width32 = fwidth;
+			mySerum.frame32 = (uint16_t *)malloc(32 * fwidth * sizeof(uint16_t));
+			mySerum.rotations32 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
+			mySerum.rotationsinframe32 = (uint16_t *)malloc(2 * 32 * fwidth * sizeof(uint16_t));
+			if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
+				mySerum.modifiedelements32 = (uint8_t *)malloc(32 * fwidth);
 		}
+
 		if (flags & FLAG_REQUEST_64P_FRAMES)
 		{
-			isextrarequested = true;
-			mySerum.width64 = fwidthx;
+			mySerum.frame64 = (uint16_t *)malloc(64 * fwidthx * sizeof(uint16_t));
+			mySerum.rotations64 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
+			mySerum.rotationsinframe64 = (uint16_t *)malloc(2 * 64 * fwidthx * sizeof(uint16_t));
+			if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
+				mySerum.modifiedelements64 = (uint8_t *)malloc(64 * fwidthx);
+		}
+
+		frameshape = (uint8_t *)malloc(fwidth * fheight);
+		if (!frameshape)
+		{
+			Serum_free();
+			enabled = false;
+			return NULL;
 		}
 	}
-	else
+	else if (SERUM_V1 == SerumVersion)
 	{
-		if (flags & FLAG_REQUEST_64P_FRAMES)
+		if (fheight == 64)
 		{
-			isoriginalrequested = true;
 			mySerum.width64 = fwidth;
+			mySerum.width32 = 0;
 		}
-		if (flags & FLAG_REQUEST_32P_FRAMES)
+		else
 		{
-			isextrarequested = true;
-			mySerum.width32 = fwidthx;
+			mySerum.width32 = fwidth;
+			mySerum.width64 = 0;
 		}
-	}
 
-	if (flags & FLAG_REQUEST_32P_FRAMES)
-	{
-		mySerum.frame32 = (uint16_t *)malloc(32 * fwidth * sizeof(uint16_t));
-		mySerum.rotations32 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
-		mySerum.rotationsinframe32 = (uint16_t *)malloc(2 * 32 * fwidth * sizeof(uint16_t));
-		if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
-			mySerum.modifiedelements32 = (uint8_t *)malloc(32 * fwidth);
-	}
-
-	if (flags & FLAG_REQUEST_64P_FRAMES)
-	{
-		mySerum.frame64 = (uint16_t *)malloc(64 * fwidthx * sizeof(uint16_t));
-		mySerum.rotations64 = (uint16_t *)malloc(MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * sizeof(uint16_t));
-		mySerum.rotationsinframe64 = (uint16_t *)malloc(2 * 64 * fwidthx * sizeof(uint16_t));
-		if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
-			mySerum.modifiedelements64 = (uint8_t *)malloc(64 * fwidthx);
+		mySerum.frame = (uint8_t*)malloc(fwidth * fheight);
+		mySerum.palette = (uint8_t*)malloc(3 * 64);
+		mySerum.rotations = (uint8_t*)malloc(MAX_COLOR_ROTATIONS * 3);
+		if (!mySerum.frame || !mySerum.palette || !mySerum.rotations)
+		{
+			Serum_free();
+			fclose(pfile);
+			enabled = false;
+			return NULL;
+		}
 	}
 
 	mySerum.ntriggers = 0;
@@ -654,6 +723,7 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	if (!framechecked)
 	{
 		Serum_free();
+		enabled = false;
 		return NULL;
 	}
 
@@ -760,16 +830,20 @@ bool Serum_SaveConcentrate(const char *filename)
 	// Write raw arrays
 	if (nsprites > 0)
 	{
-		if (spriteoriginal)
-			stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 		if (spritedetdwords)
 			stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
 		if (spritedetdwordpos)
 			stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
 		if (spritedetareas)
 			stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
+		if (spriteoriginal)
+			stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
 		if (sprshapemode)
 			stream.write(sprshapemode, nsprites);
+		if (spritedescriptionso)
+			stream.write(spritedescriptionso, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+		if (spritedescriptionsc)
+			stream.write(spritedescriptionsc, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
 	}
 
 	fclose(pfile);
@@ -1195,7 +1269,7 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 
 SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
 {
-	cromloaded = false;
+	Serum_free();
 
 	mySerum.SerumVersion = SerumVersion = 0;
 	mySerum.flags = 0;
@@ -2308,10 +2382,9 @@ uint32_t Serum_ApplyRotationsv2(void)
 {
 	if (sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
 	{
-		uint8_t frame[4096] = { 0 };
-		if (sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, frame))
+		if (sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame))
 		{
-			Serum_ColorizeWithMetadatav2(frame, true);
+			Serum_ColorizeWithMetadatav2(sceneFrame, true);
 			sceneCurrentFrame++;
 			if (sceneCurrentFrame >= sceneFrameCount)
 			{
