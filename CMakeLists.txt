@@ -84,6 +84,8 @@ endif()
 set(SERUM_SOURCES
    src/serum-decode.h
    src/serum-decode.cpp
+   src/SceneGenerator.h
+   src/SceneGenerator.cpp
    third-party/include/miniz/miniz.h
    third-party/include/miniz/miniz.c
    third-party/include/lz4/lz4.h
