@@ -463,15 +463,17 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	LZ4Stream stream(pfile, false);
 
 	// Read and verify header
-	uint32_t magic;
-	stream.read(&magic, sizeof(magic));
-	if (magic != 0x434E4F43)
-	{ // "CONC"
+	char readMagic[5] = {0};
+	stream.read(readMagic, 4);
+	if (strncmp(readMagic, "CONC", 4) != 0)
+	{
 		fclose(pfile);
 		return NULL;
 	}
 
 	// Read header data
+	uint16_t concentrateFileVersion = 1;
+	stream.read(&concentrateFileVersion, sizeof(uint16_t));
 	stream.read(&SerumVersion, sizeof(uint8_t));
 	stream.read(&fwidth, sizeof(uint32_t));
 	stream.read(&fheight, sizeof(uint32_t));
@@ -658,12 +660,12 @@ bool Serum_SaveConcentrate(const char *filename)
 
 	std::string concentratePath;
 
-	// Remove extension and add .concentrate
+	// Remove extension and add .cROMc
 	if (const char* dot = strrchr(filename, '.')) {
 		concentratePath = std::string(filename, dot);
 	}
 
-	concentratePath += ".concentrate";
+	concentratePath += ".cROMc";
 
 	FILE *pfile = fopen(concentratePath.c_str(), "wb");
 	if (!pfile)
@@ -672,8 +674,10 @@ bool Serum_SaveConcentrate(const char *filename)
 	LZ4Stream stream(pfile, true);
 
 	// Write header
-	uint32_t magic = 0x434E4F43; // "CONC"
-	stream.write(&magic, sizeof(uint32_t));
+	const char magicBytes[] = "CONC";
+	stream.write(magicBytes, 4);
+	uint16_t concentrateFileVersion = 1;
+	stream.write(&concentrateFileVersion, sizeof(uint16_t));
 	stream.write(&SerumVersion, sizeof(uint8_t));
 	stream.write(&fwidth, sizeof(uint32_t));
 	stream.write(&fheight, sizeof(uint32_t));
@@ -1189,7 +1193,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".concentrate");
+	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
 	if (pFoundFile)
 	{
 		return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
