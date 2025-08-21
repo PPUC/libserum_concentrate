@@ -59,7 +59,6 @@ bool sceneInterruptable = false;
 bool sceneStartImmediately = false;
 int sceneRepeatCount = 0;
 int sceneEndFrame = 0;
-uint32_t nextSceneFrame = 0;
 
 const int pathbuflen = 4096;
 
@@ -2066,7 +2065,7 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 	return IDENTIFY_NO_FRAME;  // no new frame, return false, client has to update rotations!
 }
 
-SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool scene = false)
+SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false)
 {
 	// return IDENTIFY_NO_FRAME if no new frame detected
 	// return 0 if new frame with no rotation detected
@@ -2074,7 +2073,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool scene = fal
 	mySerum.triggerID = 0xffffffff;
 	mySerum.frameID = IDENTIFY_NO_FRAME;
 
-	if (!scene && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
+	if (!sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
 	{
 		// Scene is active and not interruptable
 		return IDENTIFY_NO_FRAME;
@@ -2087,7 +2086,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool scene = fal
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
-		if (!scene)
+		if (!sceneFrameRequested)
 		{
 			// stop any scene
 			sceneFrameCount = 0;
@@ -2105,7 +2104,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool scene = fal
 		mySerum.frameID = frameID;
 		mySerum.rotationtimer = 0;
 
-		if (!scene && (triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
+		if (!sceneFrameRequested && (triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
 			lasttriggerID = mySerum.triggerID = triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
 
@@ -2124,7 +2123,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool scene = fal
 					}
 					else
 					{
-						mySerum.rotationtimer = nextSceneFrame = now + sceneDurationPerFrame;
+						mySerum.rotationtimer = sceneDurationPerFrame;
 					}
                 }
             }
@@ -2313,18 +2312,30 @@ uint32_t Serum_ApplyRotationsv2(void)
 			sceneCurrentFrame++;
 			if (sceneCurrentFrame >= sceneFrameCount)
 			{
+				if (sceneRepeatCount > 0)
+				{
+					sceneRepeatCount--;
+					if (sceneRepeatCount <= 0)
+					{
+						sceneFrameCount = 0; // scene ended
+						mySerum.rotationtimer = 0;
+					}
+					else
+					{
+						sceneCurrentFrame = 0; // repeat the scene
+					}
+				}
 				// @todo last frame or black screen
 				sceneFrameCount = 0; // scene ended
-				return 0;
+				mySerum.rotationtimer = 0;
 			}
-			mySerum.rotationtimer += sceneDurationPerFrame;
-			return mySerum.rotationtimer;
 		}
 		else
 		{
 			sceneFrameCount = 0; // error generating scene frame, stop the scene
-			return 0; // error generating scene frame
+			mySerum.rotationtimer = 0;
 		}
+		return mySerum.rotationtimer ? ((mySerum.rotationtimer & 0xffff) | 0x10000 | 0x20000) : 0;
 	}
 
 	uint32_t isrotation = 0;
