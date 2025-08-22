@@ -82,15 +82,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 set(SERUM_SOURCES
-   src/serum-decode.h
    src/serum-decode.cpp
-   src/SceneGenerator.h
    src/SceneGenerator.cpp
-   third-party/include/miniz/miniz.h
    third-party/include/miniz/miniz.c
-   third-party/include/lz4/lz4.h
    third-party/include/lz4/lz4.c
-   third-party/include/lz4/lz4hc.h
    third-party/include/lz4/lz4hc.c
 )
 

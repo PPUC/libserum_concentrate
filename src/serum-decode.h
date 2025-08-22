@@ -77,15 +77,6 @@ SERUM_API bool Serum_Scene_ParseCSV(const char* const csv_filename);
  */
 SERUM_API bool Serum_Scene_GenerateDump(const char* const dump_filename, int id);
 
-/** @brief Get scene ID for given parameters
- *
- * @param source: Source of the event
- * @param event: Event type
- * @param value: Event value
- * @return Scene ID or 0 if not found
- */
-SERUM_API uint16_t Serum_Scene_GetId(char source, int event, int value);
-
 /** @brief Get information about a scene
  *
  * @param sceneId: ID of the scene
@@ -97,8 +88,8 @@ SERUM_API uint16_t Serum_Scene_GetId(char source, int event, int value);
  * @param endFrame: Receives end frame behavior
  * @return true if scene info was found
  */
-SERUM_API bool Serum_Scene_GetInfo(int sceneId, int* frameCount, int* durationPerFrame, bool* interruptable,
-                                  bool* startImmediately, int* repeat, int* endFrame);
+SERUM_API bool Serum_Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint16_t* durationPerFrame, bool* interruptable,
+                                  bool* startImmediately, uint8_t* repeat, uint8_t* endFrame);
 
 /** @brief Generate a frame for a scene
  *
@@ -108,13 +99,13 @@ SERUM_API bool Serum_Scene_GetInfo(int sceneId, int* frameCount, int* durationPe
  * @param group: Group number (-1 for default)
  * @return true if frame was generated
  */
-SERUM_API bool Serum_Scene_GenerateFrame(int sceneId, int frameIndex, uint8_t* buffer, int group);
+SERUM_API bool Serum_Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group);
 
 /** @brief Set rendering depth for scenes
  *
  * @param depth: New rendering depth
  */
-SERUM_API void Serum_Scene_SetDepth(int depth);
+SERUM_API void Serum_Scene_SetDepth(uint8_t depth);
 
 /** @brief Get current rendering depth
  *

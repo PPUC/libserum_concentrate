@@ -52,13 +52,13 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 #pragma warning(disable : 4996)
 
 SceneGenerator* sceneGenerator = new SceneGenerator();
-int sceneFrameCount = 0;
-int sceneCurrentFrame = 0;
-int sceneDurationPerFrame = 0;
+uint16_t sceneFrameCount = 0;
+uint16_t sceneCurrentFrame = 0;
+uint16_t sceneDurationPerFrame = 0;
 bool sceneInterruptable = false;
 bool sceneStartImmediately = false;
-int sceneRepeatCount = 0;
-int sceneEndFrame = 0;
+uint8_t sceneRepeatCount = 0;
+uint8_t sceneEndFrame = 0;
 uint8_t sceneFrame[4096] = { 0 };
 
 const int pathbuflen = 4096;
@@ -463,6 +463,111 @@ size_t my_fread(void* pBuffer, size_t sizeElement, size_t nElements, FILE* strea
 	return fread(pBuffer, sizeElement, nElements, stream);
 }
 
+bool Serum_SaveConcentrate(const char *filename)
+{
+	if (!cromloaded)
+		return false;
+
+	std::string concentratePath;
+
+	// Remove extension and add .cROMc
+	if (const char* dot = strrchr(filename, '.')) {
+		concentratePath = std::string(filename, dot);
+	}
+
+	concentratePath += ".cROMc";
+
+	FILE *pfile = fopen(concentratePath.c_str(), "wb");
+	if (!pfile)
+		return false;
+
+	LZ4Stream stream(pfile, true);
+
+	// Write header
+	const char magicBytes[] = "CONC";
+	stream.write(magicBytes, 4);
+	uint16_t concentrateFileVersion = 1;
+	stream.write(&concentrateFileVersion, sizeof(uint16_t));
+	stream.write(&SerumVersion, sizeof(uint8_t));
+	stream.write(&fwidth, sizeof(uint32_t));
+	stream.write(&fheight, sizeof(uint32_t));
+	stream.write(&fwidthx, sizeof(uint32_t));
+	stream.write(&fheightx, sizeof(uint32_t));
+	stream.write(&nframes, sizeof(uint32_t));
+	stream.write(&nocolors, sizeof(uint32_t));
+	stream.write(&nccolors, sizeof(uint32_t));
+	stream.write(&ncompmasks, sizeof(uint32_t));
+	stream.write(&nsprites, sizeof(uint32_t));
+	stream.write(&nbackgrounds, sizeof(uint16_t));
+
+	// Write SparseVector data
+	hashcodes.saveToStream(stream);
+	shapecompmode.saveToStream(stream);
+	compmaskID.saveToStream(stream);
+	compmasks.saveToStream(stream);
+	cpal.saveToStream(stream);
+	isextraframe.saveToStream(stream);
+	cframes.saveToStream(stream);
+	cframesn.saveToStream(stream);
+	cframesnx.saveToStream(stream);
+	dynamasks.saveToStream(stream);
+	dynamasksx.saveToStream(stream);
+	dyna4cols.saveToStream(stream);
+	dyna4colsn.saveToStream(stream);
+	dyna4colsnx.saveToStream(stream);
+	framesprites.saveToStream(stream);
+	isextrasprite.saveToStream(stream);
+	spritemaskx.saveToStream(stream);
+	spritecolored.saveToStream(stream);
+	spritecoloredx.saveToStream(stream);
+	activeframes.saveToStream(stream);
+	colorrotations.saveToStream(stream);
+	colorrotationsn.saveToStream(stream);
+	colorrotationsnx.saveToStream(stream);
+	triggerIDs.saveToStream(stream);
+	framespriteBB.saveToStream(stream);
+	isextrabackground.saveToStream(stream);
+	backgroundframes.saveToStream(stream);
+	backgroundframesn.saveToStream(stream);
+	backgroundframesnx.saveToStream(stream);
+	backgroundIDs.saveToStream(stream);
+	backgroundBB.saveToStream(stream);
+	backgroundmask.saveToStream(stream);
+	backgroundmaskx.saveToStream(stream);
+	dynashadowsdiro.saveToStream(stream);
+	dynashadowscolo.saveToStream(stream);
+	dynashadowsdirx.saveToStream(stream);
+	dynashadowscolx.saveToStream(stream);
+	dynasprite4cols.saveToStream(stream);
+	dynasprite4colsx.saveToStream(stream);
+	dynaspritemasks.saveToStream(stream);
+	dynaspritemasksx.saveToStream(stream);
+
+	// Write raw arrays
+	if (nsprites > 0)
+	{
+		if (spritedetdwords)
+			stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
+		if (spritedetdwordpos)
+			stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
+		if (spritedetareas)
+			stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
+		if (spriteoriginal)
+			stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+		if (sprshapemode)
+			stream.write(sprshapemode, nsprites);
+		if (spritedescriptionso)
+			stream.write(spritedescriptionso, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+		if (spritedescriptionsc)
+			stream.write(spritedescriptionsc, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+	}
+
+	sceneGenerator->saveToStream(stream);
+
+	fclose(pfile);
+	return true;
+}
+
 Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t flags)
 {
 	if (!crc32_ready)
@@ -616,6 +721,8 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 		}
 	}
 
+	sceneGenerator->loadFromStream(stream);
+
 	fclose(pfile);
 
 	// Update mySerum structure
@@ -731,123 +838,7 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	cromloaded = true;
 	enabled = true;
 
-	std::string concentratePath;
-	// Remove extension
-	if (const char* dot = strrchr(filename, '.'))
-	{
-		concentratePath = std::string(filename, dot);
-	}
-	concentratePath += ".pup.csv";
-
-	if (sceneGenerator->parseCSV(concentratePath))
-	{
-		sceneGenerator->setDepth(16 == nocolors ? 4 : 2);
-	}
-
 	return &mySerum;
-}
-
-bool Serum_SaveConcentrate(const char *filename)
-{
-	if (!cromloaded)
-		return false;
-
-	std::string concentratePath;
-
-	// Remove extension and add .cROMc
-	if (const char* dot = strrchr(filename, '.')) {
-		concentratePath = std::string(filename, dot);
-	}
-
-	concentratePath += ".cROMc";
-
-	FILE *pfile = fopen(concentratePath.c_str(), "wb");
-	if (!pfile)
-		return false;
-
-	LZ4Stream stream(pfile, true);
-
-	// Write header
-	const char magicBytes[] = "CONC";
-	stream.write(magicBytes, 4);
-	uint16_t concentrateFileVersion = 1;
-	stream.write(&concentrateFileVersion, sizeof(uint16_t));
-	stream.write(&SerumVersion, sizeof(uint8_t));
-	stream.write(&fwidth, sizeof(uint32_t));
-	stream.write(&fheight, sizeof(uint32_t));
-	stream.write(&fwidthx, sizeof(uint32_t));
-	stream.write(&fheightx, sizeof(uint32_t));
-	stream.write(&nframes, sizeof(uint32_t));
-	stream.write(&nocolors, sizeof(uint32_t));
-	stream.write(&nccolors, sizeof(uint32_t));
-	stream.write(&ncompmasks, sizeof(uint32_t));
-	stream.write(&nsprites, sizeof(uint32_t));
-	stream.write(&nbackgrounds, sizeof(uint16_t));
-
-	// Write SparseVector data
-	hashcodes.saveToStream(stream);
-	shapecompmode.saveToStream(stream);
-	compmaskID.saveToStream(stream);
-	compmasks.saveToStream(stream);
-	cpal.saveToStream(stream);
-	isextraframe.saveToStream(stream);
-	cframes.saveToStream(stream);
-	cframesn.saveToStream(stream);
-	cframesnx.saveToStream(stream);
-	dynamasks.saveToStream(stream);
-	dynamasksx.saveToStream(stream);
-	dyna4cols.saveToStream(stream);
-	dyna4colsn.saveToStream(stream);
-	dyna4colsnx.saveToStream(stream);
-	framesprites.saveToStream(stream);
-	isextrasprite.saveToStream(stream);
-	spritemaskx.saveToStream(stream);
-	spritecolored.saveToStream(stream);
-	spritecoloredx.saveToStream(stream);
-	activeframes.saveToStream(stream);
-	colorrotations.saveToStream(stream);
-	colorrotationsn.saveToStream(stream);
-	colorrotationsnx.saveToStream(stream);
-	triggerIDs.saveToStream(stream);
-	framespriteBB.saveToStream(stream);
-	isextrabackground.saveToStream(stream);
-	backgroundframes.saveToStream(stream);
-	backgroundframesn.saveToStream(stream);
-	backgroundframesnx.saveToStream(stream);
-	backgroundIDs.saveToStream(stream);
-	backgroundBB.saveToStream(stream);
-	backgroundmask.saveToStream(stream);
-	backgroundmaskx.saveToStream(stream);
-	dynashadowsdiro.saveToStream(stream);
-	dynashadowscolo.saveToStream(stream);
-	dynashadowsdirx.saveToStream(stream);
-	dynashadowscolx.saveToStream(stream);
-	dynasprite4cols.saveToStream(stream);
-	dynasprite4colsx.saveToStream(stream);
-	dynaspritemasks.saveToStream(stream);
-	dynaspritemasksx.saveToStream(stream);
-
-	// Write raw arrays
-	if (nsprites > 0)
-	{
-		if (spritedetdwords)
-			stream.write(spritedetdwords, sizeof(uint32_t)* nsprites * MAX_SPRITE_DETECT_AREAS);
-		if (spritedetdwordpos)
-			stream.write(spritedetdwordpos, sizeof(uint16_t) * nsprites * MAX_SPRITE_DETECT_AREAS);
-		if (spritedetareas)
-			stream.write(spritedetareas, sizeof(uint16_t) * nsprites * 4 * MAX_SPRITE_DETECT_AREAS);
-		if (spriteoriginal)
-			stream.write(spriteoriginal, nsprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-		if (sprshapemode)
-			stream.write(sprshapemode, nsprites);
-		if (spritedescriptionso)
-			stream.write(spritedescriptionso, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
-		if (spritedescriptionsc)
-			stream.write(spritedescriptionsc, nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
-	}
-
-	fclose(pfile);
-	return true;
 }
 
 Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncompressedCROM, char* pathbuf, uint32_t sizeheader)
@@ -1127,12 +1118,7 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	uint32_t sizeheader;
 	my_fread(&sizeheader, 4, 1, pfile);
 	// if this is a new format file, we load with Serum_LoadNewFile()
-	if (sizeheader >= 14 * sizeof(uint32_t))
-	{
-		Serum_Frame_Struc* result = Serum_LoadFilev2(pfile, flags, uncompressedCROM, pathbuf, sizeheader);
-		Serum_SaveConcentrate(filename);
-		return result;
-	}
+	if (sizeheader >= 14 * sizeof(uint32_t)) return Serum_LoadFilev2(pfile, flags, uncompressedCROM, pathbuf, sizeheader);
 	mySerum.SerumVersion = SerumVersion = SERUM_V1;
 	my_fread(&fwidth, 4, 1, pfile);
 	my_fread(&fheight, 4, 1, pfile);
@@ -1261,8 +1247,6 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 		remove(pathbuf);
 	}
 
-	Serum_SaveConcentrate(filename);
-
 	enabled = true;
 	return &mySerum;
 }
@@ -1291,22 +1275,38 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
+	Serum_Frame_Struc* result;
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
 	if (pFoundFile)
 	{
-		return Serum_LoadConcentrate(pFoundFile->c_str(), flags);
+		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
+	}
+	else {
+		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
+
+		pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
+		if (!pFoundFile)
+			pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cRZ");
+		if (!pFoundFile) {
+			enabled = false;
+			return NULL;
+		}
+		result = Serum_LoadFilev1(pFoundFile->c_str(), flags);
+		if (result) Serum_SaveConcentrate(pFoundFile->c_str());
 	}
 
-	flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
-
-	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROM");
-	if (!pFoundFile)
-		pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cRZ");
-	if (!pFoundFile) {
-		enabled = false;
-		return NULL;
+	if (result)
+	{
+		pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".csv");
+		if (pFoundFile && sceneGenerator->parseCSV(pFoundFile->c_str()))
+		{
+			// Update the concentrate file with new PUP data
+			Serum_SaveConcentrate(pFoundFile->c_str());
+		}
+		sceneGenerator->setDepth(16 == nocolors ? 4 : 2);
 	}
-	return Serum_LoadFilev1(pFoundFile->c_str(), flags);
+	
+	return result;
 }
 
 SERUM_API void Serum_Dispose(void)
@@ -2510,24 +2510,19 @@ SERUM_API bool Serum_Scene_GenerateDump(const char* const dump_filename, int id)
     return sceneGenerator->generateDump(dump_filename, id);
 }
 
-SERUM_API uint16_t Serum_Scene_GetId(char source, int event, int value) {
-    if (!sceneGenerator) return 0;
-    return sceneGenerator->getSceneId(source, event, value);
-}
-
-SERUM_API bool Serum_Scene_GetInfo(int sceneId, int* frameCount, int* durationPerFrame, bool* interruptable,
-                                  bool* startImmediately, int* repeat, int* endFrame) {
+SERUM_API bool Serum_Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint16_t* durationPerFrame, bool* interruptable,
+                                  bool* startImmediately, uint8_t* repeat, uint8_t* endFrame) {
     if (!sceneGenerator) return false;
     return sceneGenerator->getSceneInfo(sceneId, *frameCount, *durationPerFrame, *interruptable,
                                       *startImmediately, *repeat, *endFrame);
 }
 
-SERUM_API bool Serum_Scene_GenerateFrame(int sceneId, int frameIndex, uint8_t* buffer, int group) {
+SERUM_API bool Serum_Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group) {
     if (!sceneGenerator) return false;
     return sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group);
 }
 
-SERUM_API void Serum_Scene_SetDepth(int depth) {
+SERUM_API void Serum_Scene_SetDepth(uint8_t depth) {
     if (sceneGenerator) sceneGenerator->setDepth(depth);
 }
 
