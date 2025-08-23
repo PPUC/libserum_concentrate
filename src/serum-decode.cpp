@@ -59,7 +59,8 @@ bool sceneInterruptable = false;
 bool sceneStartImmediately = false;
 uint8_t sceneRepeatCount = 0;
 uint8_t sceneEndFrame = 0;
-uint8_t sceneFrame[4096] = { 0 };
+uint8_t sceneFrame[192 * 64] = { 0 };
+uint8_t lastFrame[192 * 64] = { 0 };
 
 const int pathbuflen = 4096;
 
@@ -1305,7 +1306,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		}
 		sceneGenerator->setDepth(16 == nocolors ? 4 : 2);
 	}
-	
+
 	return result;
 }
 
@@ -2191,6 +2192,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
                                                sceneInterruptable, sceneStartImmediately, sceneRepeatCount,
                                                sceneEndFrame))
                 {
+					memcpy(lastFrame, frame, fwidth * fheight);
 					//Log(DMDUtil_LogLevel_DEBUG, "Serum: trigger ID %lu found in scenes, frame count=%d, duration=%dms",
 					//    m_pSerum->triggerID, sceneFrameCount, sceneDurationPerFrame);
 					sceneCurrentFrame = 0;
@@ -2285,6 +2287,12 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 						if (mySerum.rotationtimer <= 0) mySerum.rotationtimer = 10;
 					}
 				}
+			}
+
+			if (0 == mySerum.rotationtimer && sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame >= sceneFrameCount &&
+				 sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
+			{
+				mySerum.rotationtimer = sceneGenerator->getAutoStartTimer();
 			}
 
 			return (uint32_t)mySerum.rotationtimer;  // new frame, return true
@@ -2386,24 +2394,48 @@ uint32_t Serum_ApplyRotationsv2(void)
 		{
 			Serum_ColorizeWithMetadatav2(sceneFrame, true);
 			sceneCurrentFrame++;
-			if (sceneCurrentFrame >= sceneFrameCount)
+			if (sceneCurrentFrame >= sceneFrameCount && sceneRepeatCount > 0)
 			{
-				if (sceneRepeatCount > 0)
+				if (sceneRepeatCount == 1) {
+					sceneCurrentFrame = 0; // loop
+				}
+				else
 				{
-					sceneRepeatCount--;
-					if (sceneRepeatCount <= 0)
-					{
-						sceneFrameCount = 0; // scene ended
-						mySerum.rotationtimer = 0;
-					}
-					else
-					{
-						sceneCurrentFrame = 0; // repeat the scene
+					sceneCurrentFrame = 0; // repeat the scene
+					if (--sceneRepeatCount <= 1) {
+						sceneRepeatCount = 0; // no more repeat
 					}
 				}
-				// @todo last frame or black screen
+			}
+
+			if (sceneCurrentFrame >= sceneFrameCount)
+			{
 				sceneFrameCount = 0; // scene ended
 				mySerum.rotationtimer = 0;
+
+				switch (sceneEndFrame)
+				{
+					case 1: // black frame
+						if (mySerum.frame32) memset(mySerum.frame32, 0, 32 * mySerum.width32);
+						if (mySerum.frame64) memset(mySerum.frame64, 0, 64 * mySerum.width64);
+						break;
+
+					case 2: // previous frame before the scene
+						if (lastfound < MAX_NUMBER_FRAMES && activeframes[lastfound][0] != 0)
+						{
+							Serum_ColorizeWithMetadatav2(lastFrame);
+						}
+						else
+						{
+							if (mySerum.frame32) memset(mySerum.frame32, 0, 32 * mySerum.width32);
+							if (mySerum.frame64) memset(mySerum.frame64, 0, 64 * mySerum.width64);
+						}
+						break;
+
+					case 0: // keep the last frame of the scene
+					default:
+						break;
+				}
 			}
 		}
 		else
@@ -2411,7 +2443,7 @@ uint32_t Serum_ApplyRotationsv2(void)
 			sceneFrameCount = 0; // error generating scene frame, stop the scene
 			mySerum.rotationtimer = 0;
 		}
-		return mySerum.rotationtimer ? ((mySerum.rotationtimer & 0xffff) | 0x10000 | 0x20000) : 0;
+		return (mySerum.rotationtimer & 0xffff) | 0x10000 | 0x20000; // scene frame, so we consider both frames changed
 	}
 
 	uint32_t isrotation = 0;

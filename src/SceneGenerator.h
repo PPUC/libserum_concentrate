@@ -31,19 +31,25 @@ class SceneGenerator
   bool generateDump(const std::string& dump_filename, int id = -1);
   bool getSceneInfo(uint16_t sceneId, uint16_t& frameCount, uint16_t& durationPerFrame, bool& interruptable, bool& startImmediately,
                     uint8_t& repeat, uint8_t& endFrame) const;
+  bool getAutoStartSceneInfo(uint16_t& frameCount, uint16_t& durationPerFrame, bool& interruptable, bool& startImmediately,
+                    uint8_t& repeat, uint8_t& endFrame) const;
   bool generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group = -1);
   void setDepth(uint8_t depth);
   int getDepth() const { return m_depth; }
   bool isActive() const { return m_active; }
+  uint32_t getAutoStartTimer() const { return 1000 * m_autoStartTimer; }
+  void saveToStream(LZ4Stream &stream) const;
+  void loadFromStream(LZ4Stream &stream);
   void Reset()
   {
     m_sceneData.clear();
+    m_autoStartTimer = 0;
+    m_autoStartSceneId = 0;
+    m_depth = 2;
     m_templateInitialized = false;
     initializeTemplate();
     m_active = false;
   }
-  void saveToStream(LZ4Stream &stream) const;
-  void loadFromStream(LZ4Stream &stream);
 
  private:
   std::vector<SceneData> m_sceneData;
@@ -63,4 +69,7 @@ class SceneGenerator
 
   uint8_t m_depth = 2;  // Default depth for rendering
   bool m_active = false;  // Is the scene generator active?
+
+  uint8_t m_autoStartTimer = 0;  // Timer for auto-start scenes
+  uint16_t m_autoStartSceneId = 0;  // Scene ID to auto-start
 };

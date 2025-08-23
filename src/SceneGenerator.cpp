@@ -103,7 +103,14 @@ bool SceneGenerator::parseCSV(const std::string &csv_filename)
       if (row.size() >= 8)
         data.random = (std::stoi(row[7]) == 1);
       if (row.size() >= 9)
+      {
         data.autoStart = (uint8_t)std::stoi(row[8]);
+        if (data.autoStart > 0)
+        {
+          m_autoStartTimer = data.autoStart;
+          m_autoStartSceneId = data.sceneId;
+        }
+      }
       if (row.size() >= 10)
         data.endFrame = (uint8_t)std::stoi(row[9]);
 
@@ -201,6 +208,16 @@ bool SceneGenerator::getSceneInfo(uint16_t sceneId, uint16_t &frameCount, uint16
   repeat = it->repeat;
   endFrame = it->endFrame;
   return true;
+}
+
+bool SceneGenerator::getAutoStartSceneInfo(uint16_t &frameCount, uint16_t &durationPerFrame, bool &interruptable,
+                                  bool &startImmediately, uint8_t &repeat, uint8_t &endFrame) const
+{
+  if (m_autoStartSceneId >= 0) {
+    return getSceneInfo(m_autoStartSceneId, frameCount, durationPerFrame, interruptable, startImmediately, repeat, endFrame);
+  }
+
+  return false;
 }
 
 bool SceneGenerator::generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t *buffer, int group)
@@ -438,6 +455,8 @@ void SceneGenerator::saveToStream(LZ4Stream &stream) const
     stream.write(&entry.autoStart, sizeof(entry.autoStart));
     stream.write(&entry.endFrame, sizeof(entry.endFrame));
   }
+  stream.write(&m_autoStartTimer, sizeof(m_autoStartTimer));
+  stream.write(&m_autoStartSceneId, sizeof(m_autoStartSceneId));
 }
 
 void SceneGenerator::loadFromStream(LZ4Stream &stream)
@@ -471,6 +490,9 @@ void SceneGenerator::loadFromStream(LZ4Stream &stream)
     // Add to vector
     m_sceneData.push_back(entry);
   }
+
+  stream.read(&m_autoStartTimer, sizeof(m_autoStartTimer));
+  stream.read(&m_autoStartSceneId, sizeof(m_autoStartSceneId));
 
   m_active = !m_sceneData.empty();
 }
