@@ -213,7 +213,7 @@ bool SceneGenerator::getSceneInfo(uint16_t sceneId, uint16_t &frameCount, uint16
 bool SceneGenerator::getAutoStartSceneInfo(uint16_t &frameCount, uint16_t &durationPerFrame, bool &interruptable,
                                   bool &startImmediately, uint8_t &repeat, uint8_t &endFrame) const
 {
-  if (m_autoStartSceneId >= 0) {
+  if (m_autoStartSceneId > 0) {
     return getSceneInfo(m_autoStartSceneId, frameCount, durationPerFrame, interruptable, startImmediately, repeat, endFrame);
   }
 
