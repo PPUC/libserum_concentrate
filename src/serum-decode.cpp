@@ -1284,7 +1284,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		csvFound = true;
 	}
 
-	Serum_Frame_Struc* result;
+	Serum_Frame_Struc* result = NULL;
 	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
 	if (pFoundFile)
 	{
