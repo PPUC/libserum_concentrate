@@ -157,7 +157,7 @@ uint8_t* sprshapemode = NULL;
 
 // variables
 bool cromloaded = false;  // is there a crom loaded?
-uint16_t lastfound = 0;     // last frame ID identified
+uint32_t lastfound = 0;     // last frame ID identified
 uint32_t lastframe_full_crc = 0;
 uint32_t lastframe_found = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 uint32_t lasttriggerID = 0xffffffff;  // last trigger ID found
@@ -1276,12 +1276,12 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	bool csvFound = false;
+	std::optional<std::string> csvFoundFile = std::nullopt;
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".csv");
 	if (pFoundFile && sceneGenerator->parseCSV(pFoundFile->c_str()))
 	{
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // request both frame types for updating concentrate
-		csvFound = true;
+		csvFoundFile = pFoundFile;
 	}
 
 	Serum_Frame_Struc* result = NULL;
@@ -1289,7 +1289,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	if (pFoundFile)
 	{
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
-		if (result && csvFound && sceneGenerator->parseCSV(pFoundFile->c_str()))
+		if (result && csvFoundFile && sceneGenerator->parseCSV(csvFoundFile->c_str()))
 		{
 			// Update the concentrate file with new PUP data
 			Serum_SaveConcentrate(pFoundFile->c_str());
@@ -1311,7 +1311,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 
 		if (result)
 		{
-			if (csvFound) sceneGenerator->parseCSV(pFoundFile->c_str());
+			if (csvFoundFile) sceneGenerator->parseCSV(csvFoundFile->c_str());
 			Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}
