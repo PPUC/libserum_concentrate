@@ -48,7 +48,7 @@ public:
 
 		while (remaining > 0)
 		{
-			size_t chunk = std::min(remaining, CHUNK_SIZE);
+			size_t chunk = (std::min)(remaining, CHUNK_SIZE);
 			int compressedSize = LZ4_compress_HC_continue(
 				ctx_hc_, src, (char *)outBuf_.data(),
 				chunk, outBuf_.size());
@@ -83,7 +83,7 @@ public:
 			if (fread(inBuf_.data(), 1, compressedSize, file_) != compressedSize)
 				return false;
 
-			size_t chunk = std::min(remaining, CHUNK_SIZE);
+			size_t chunk = (std::min)(remaining, CHUNK_SIZE);
 			int decompressedSize = LZ4_decompress_safe_continue(
 				dctx_, (char *)inBuf_.data(), dst,
 				compressedSize, chunk);
