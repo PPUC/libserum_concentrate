@@ -1314,6 +1314,8 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		}
 	}
 
+	if (result && sceneGenerator->isActive()) sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);
+
 	return result;
 }
 
