@@ -1276,16 +1276,14 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	std::optional<std::string> csvFoundFile = std::nullopt;
-	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".csv");
-	if (pFoundFile && sceneGenerator->parseCSV(pFoundFile->c_str()))
+	std::optional<std::string> csvFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".csv");
+	if (csvFoundFile)
 	{
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // request both frame types for updating concentrate
-		csvFoundFile = pFoundFile;
 	}
 
 	Serum_Frame_Struc* result = NULL;
-	pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
+	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
 	if (pFoundFile)
 	{
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
