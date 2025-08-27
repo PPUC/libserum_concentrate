@@ -14,6 +14,7 @@
 
 #include "serum-version.h"
 #include "sparse-vector.h"
+#include "SceneGenerator.h"
 
 #if defined(__APPLE__)
 #include <TargetConditionals.h>

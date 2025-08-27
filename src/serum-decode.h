@@ -11,7 +11,6 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #include "serum.h"
-#include "SceneGenerator.h"
 
 /** @brief Load a Serum file.
  *
