@@ -82,6 +82,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 set(SERUM_SOURCES
+   src/SerumContext.cpp
+   src/SerumColorizer.cpp
    src/serum-decode.cpp
    src/SceneGenerator.cpp
    third-party/include/miniz/miniz.c
@@ -90,6 +92,7 @@ set(SERUM_SOURCES
 )
 
 set(SERUM_INCLUDE_DIRS
+   include
    src
    third-party/include
 )
@@ -114,9 +117,9 @@ if(BUILD_SHARED)
       LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
    )
    install(FILES
-      src/serum.h
+      include/Serum/SerumColorizer.h
       src/serum-decode.h
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
       add_executable(serum_test
@@ -146,9 +149,9 @@ if(BUILD_STATIC)
       LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
    )
    install(FILES
-      src/serum.h
+      include/Serum/SerumColorizer.h
       src/serum-decode.h
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
       add_executable(serum_test_s

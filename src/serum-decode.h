@@ -10,7 +10,7 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-#include "serum.h"
+#include "Serum/SerumColorizer.h"
 
 /** @brief Load a Serum file.
  *
