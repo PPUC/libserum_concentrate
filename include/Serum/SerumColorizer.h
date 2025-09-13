@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <cstdint>
 
 // Platform-specific API macros
 #ifdef _MSC_VER
@@ -45,30 +45,30 @@
 // Main data structure that the library returns
 typedef struct
 {
-   uint8_t SerumVersion;
-   uint32_t flags;
-   uint32_t nocolors;
-   uint32_t width32;
-   uint32_t width64;
-   uint32_t frameID;
-   uint32_t rotationtimer;
-   uint32_t ntriggers;
-   uint32_t triggerID;
+  uint8_t SerumVersion;
+  uint32_t flags;
+  uint32_t nocolors;
+  uint32_t width32;
+  uint32_t width64;
+  uint32_t frameID;
+  uint32_t rotationtimer;
+  uint32_t ntriggers;
+  uint32_t triggerID;
 
-   // Frame data pointers
-   uint8_t* frame; // V1 format frame data
-   uint8_t* palette; // V1 format palette data
-   uint8_t* rotations; // V1 format color rotation data
+  // Frame data pointers
+  uint8_t* frame;      // V1 format frame data
+  uint8_t* palette;    // V1 format palette data
+  uint8_t* rotations;  // V1 format color rotation data
 
-   // V2 format data
-   uint16_t* frame32; // 32-line high resolution frame
-   uint16_t* frame64; // 64-line high resolution frame
-   uint16_t* rotations32; // 32-line color rotations
-   uint16_t* rotations64; // 64-line color rotations
-   uint16_t* rotationsinframe32; // 32-line rotation data in frame
-   uint16_t* rotationsinframe64; // 64-line rotation data in frame
-   uint8_t* modifiedelements32; // 32-line modified elements
-   uint8_t* modifiedelements64; // 64-line modified elements
+  // V2 format data
+  uint16_t* frame32;             // 32-line high resolution frame
+  uint16_t* frame64;             // 64-line high resolution frame
+  uint16_t* rotations32;         // 32-line color rotations
+  uint16_t* rotations64;         // 64-line color rotations
+  uint16_t* rotationsinframe32;  // 32-line rotation data in frame
+  uint16_t* rotationsinframe64;  // 64-line rotation data in frame
+  uint8_t* modifiedelements32;   // 32-line modified elements
+  uint8_t* modifiedelements64;   // 64-line modified elements
 } Serum_Frame_Struc;
 
 namespace Serum
@@ -79,53 +79,54 @@ class SerumContext;
 
 class SERUMAPI Serum
 {
-public:
-   Serum();
-   ~Serum();
+ public:
+  Serum();
+  ~Serum();
 
-   Serum(const Serum&) = delete;
-   Serum& operator=(const Serum&) = delete;
-   Serum(Serum&&) = default;
-   Serum& operator=(Serum&&) = default;
+  Serum(const Serum&) = delete;
+  Serum& operator=(const Serum&) = delete;
+  Serum(Serum&&) = default;
+  Serum& operator=(Serum&&) = default;
 
-   bool Load(const std::string& altcolorpath, const std::string& romname, uint8_t flags = 0);
-   void Dispose();
+  bool Load(const std::string& altcolorpath, const std::string& romname, uint8_t flags = 0);
+  void Dispose();
 
-   uint32_t Colorize(uint8_t* frame);
-   uint32_t Rotate();
+  uint32_t Colorize(uint8_t* frame);
+  uint32_t Rotate();
 
-   void EnableColorization();
-   void DisableColorization();
-   bool IsColorizationEnabled() const;
+  void EnableColorization();
+  void DisableColorization();
+  bool IsColorizationEnabled() const;
 
-   void SetIgnoreUnknownFramesTimeout(uint16_t milliseconds);
-   void SetMaximumUnknownFramesToSkip(uint8_t maximum);
-   void SetStandardPalette(const uint8_t* palette, int bitDepth);
+  void SetIgnoreUnknownFramesTimeout(uint16_t milliseconds);
+  void SetMaximumUnknownFramesToSkip(uint8_t maximum);
+  void SetStandardPalette(const uint8_t* palette, int bitDepth);
 
-   const Serum_Frame_Struc* GetFrameData() const;
+  const Serum_Frame_Struc* GetFrameData() const;
 
-   bool IsLoaded() const;
-   uint8_t GetSerumVersion() const;
-   uint32_t GetFrameWidth() const;
-   uint32_t GetFrameHeight() const;
-   uint32_t GetFrameCount() const;
+  bool IsLoaded() const;
+  uint8_t GetSerumVersion() const;
+  uint32_t GetFrameWidth() const;
+  uint32_t GetFrameHeight() const;
+  uint32_t GetFrameCount() const;
 
-   static std::string GetVersion();
-   static std::string GetMinorVersion();
+  static std::string GetVersion();
+  static std::string GetMinorVersion();
 
-   // Scene API
-   bool Scene_ParseCSV(const char* csv_filename);
-   bool Scene_GenerateDump(const char* dump_filename, int id);
-   bool Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint16_t* durationPerFrame, bool* interruptable, bool* startImmediately, uint8_t* repeat, uint8_t* endFrame);
-   bool Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group);
-   void Scene_SetDepth(uint8_t depth);
-   int Scene_GetDepth();
-   bool Scene_IsActive();
-   void Scene_Reset();
+  // Scene API
+  bool Scene_ParseCSV(const char* csv_filename);
+  bool Scene_GenerateDump(const char* dump_filename, int id);
+  bool Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint16_t* durationPerFrame, bool* interruptable,
+                     bool* startImmediately, uint8_t* repeat, uint8_t* endFrame);
+  bool Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group);
+  void Scene_SetDepth(uint8_t depth);
+  int Scene_GetDepth();
+  bool Scene_IsActive();
+  void Scene_Reset();
 
-private:
-   std::unique_ptr<SerumContext> m_context;
-   bool m_loaded;
+ private:
+  std::unique_ptr<SerumContext> m_context;
+  bool m_loaded;
 };
 
-} // namespace Serum
+}  // namespace Serum
