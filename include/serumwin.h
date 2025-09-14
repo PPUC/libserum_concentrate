@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-#include "serum.h"
+#include "SerumColorizer.h"
 
 HINSTANCE hSerumDLL;
 Serum_LoadFunc Serum_Load;
