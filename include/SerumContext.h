@@ -1,13 +1,12 @@
 #pragma once
 
-#include <Serum/SerumColorizer.h>
-
 #include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
 
 #include "SceneGenerator.h"
+#include "SerumColorizer.h"
 #include "SparseVector.h"
 
 namespace Serum

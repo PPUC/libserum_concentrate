@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "LZ4Stream.h"
+
 template <typename T>
 class SparseVector
 {

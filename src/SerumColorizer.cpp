@@ -1,7 +1,6 @@
-#include <Serum/SerumColorizer.h>
-
 #include <sstream>
 
+#include "SerumColorizer.h"
 #include "SerumContext.h"
 #include "serum-version.h"
 

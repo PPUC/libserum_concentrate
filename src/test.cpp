@@ -1,6 +1,6 @@
-#include <serum-decode.h>
-
 #include <iostream>
+
+#include "serum-decode.h"
 
 int main(int argc, const char* argv[])
 {

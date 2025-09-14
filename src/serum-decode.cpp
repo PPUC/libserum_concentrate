@@ -1,4 +1,4 @@
-#include <serum-decode.h>
+#include "serum-decode.h"
 
 #include "SceneGenerator.h"
 #include "SerumContext.h"
