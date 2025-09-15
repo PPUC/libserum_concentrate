@@ -9,6 +9,13 @@
 #include "SparseVector.h"
 #include "serum-version.h"
 
+// Platform-specific API macros
+#ifdef _MSC_VER
+#define SERUMAPI __declspec(dllexport)
+#else
+#define SERUMAPI __attribute__((visibility("default")))
+#endif
+
 // Constants
 #define MAX_COLOR_ROTATIONS 8
 #define MAX_COLOR_ROTATIONN 16
@@ -25,7 +32,7 @@
 namespace Serum
 {
 
-class SerumContext
+class SERUMAPI SerumContext
 {
  public:
   SerumContext();
