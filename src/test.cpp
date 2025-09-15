@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "SerumColorizer.h"
 #include "serum-decode.h"
 
 int main(int argc, const char* argv[])

@@ -8,6 +8,7 @@
 #include "SceneGenerator.h"
 #include "SerumColorizer.h"
 #include "SparseVector.h"
+#include "serum-version.h"
 
 namespace Serum
 {

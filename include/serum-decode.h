@@ -8,9 +8,7 @@
 #define SERUM_CALLBACK
 #endif
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-#include "SerumColorizer.h"
+#include "serum-version.h"
 
 /** @brief Load a Serum file.
  *
