@@ -79,13 +79,13 @@ const Serum_Frame_Struc* Serum::GetFrameData() const
 
 bool Serum::IsLoaded() const { return m_loaded; }
 
-uint8_t Serum::GetSerumVersion() const { return static_cast<uint8_t>(0); }
+uint8_t Serum::GetSerumVersion() const { return m_context->GetSerumVersion(); }
 
-uint32_t Serum::GetFrameWidth() const { return static_cast<uint32_t>(0); }
+uint32_t Serum::GetFrameWidth() const { return  m_context->GetFrameWidth(); }
 
-uint32_t Serum::GetFrameHeight() const { return static_cast<uint32_t>(0); }
+uint32_t Serum::GetFrameHeight() const { return  m_context->GetFrameHeight(); }
 
-uint32_t Serum::GetFrameCount() const { return static_cast<uint32_t>(0); }
+uint32_t Serum::GetFrameCount() const { return m_context->GetFrameCount(); }
 
 std::string Serum::GetVersion()
 {

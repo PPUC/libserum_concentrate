@@ -6,9 +6,21 @@
 #include <string>
 
 #include "SceneGenerator.h"
-#include "SerumColorizer.h"
 #include "SparseVector.h"
 #include "serum-version.h"
+
+// Constants
+#define MAX_COLOR_ROTATIONS 8
+#define MAX_COLOR_ROTATIONN 16
+#define MAX_LENGTH_COLOR_ROTATION 16
+#define PALETTE_SIZE 768
+#define MAX_SPRITES_PER_FRAME 32
+#define MAX_SPRITE_DETECT_AREAS 8
+#define MAX_SPRITE_WIDTH 32
+#define MAX_SPRITE_HEIGHT 32
+#define MAX_SPRITE_SIZE 32
+#define MAX_DYNA_4COLS_PER_FRAME 256
+#define MAX_DYNA_SETS_PER_SPRITE 9
 
 namespace Serum
 {
@@ -25,6 +37,11 @@ class SerumContext
   SerumContext& operator=(SerumContext&&) = default;
 
   Serum_Frame_Struc* Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
+  uint8_t GetSerumVersion() const { return m_serumVersion; }
+  uint32_t GetFrameWidth() const { return m_fwidth; }
+  uint32_t GetFrameHeight() const { return m_fheight; }
+  uint32_t GetFrameCount() const { return m_nframes; }
+
   void Dispose();
   uint32_t Colorize(uint8_t* frame);
   uint32_t Rotate();

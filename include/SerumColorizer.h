@@ -5,6 +5,7 @@
 #include <string>
 
 #include "serum-version.h"
+#include "SerumContext.h"
 
 // Platform-specific API macros
 #ifdef _MSC_VER
@@ -15,24 +16,8 @@
 #define SERUMAPI __attribute__((visibility("default")))
 #endif
 
-// Constants
-#define MAX_COLOR_ROTATIONS 8
-#define MAX_COLOR_ROTATIONN 16
-#define MAX_LENGTH_COLOR_ROTATION 16
-#define PALETTE_SIZE 768
-#define MAX_SPRITES_PER_FRAME 32
-#define MAX_SPRITE_DETECT_AREAS 8
-#define MAX_SPRITE_WIDTH 32
-#define MAX_SPRITE_HEIGHT 32
-#define MAX_SPRITE_SIZE 32
-#define MAX_DYNA_4COLS_PER_FRAME 256
-#define MAX_DYNA_SETS_PER_SPRITE 9
-
 namespace Serum
 {
-
-// Forward declarations
-class SerumContext;
 
 class SERUMAPI Serum
 {
