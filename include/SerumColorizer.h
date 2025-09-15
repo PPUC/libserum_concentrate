@@ -25,11 +25,6 @@ class SERUMAPI Serum
   Serum();
   ~Serum();
 
-  Serum(const Serum&) = delete;
-  Serum& operator=(const Serum&) = delete;
-  Serum(Serum&&) = default;
-  Serum& operator=(Serum&&) = default;
-
   bool Load(const std::string& altcolorpath, const std::string& romname, uint8_t flags = 0);
   void Dispose();
 

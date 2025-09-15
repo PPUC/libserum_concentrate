@@ -31,11 +31,6 @@ class SerumContext
   SerumContext();
   ~SerumContext();
 
-  SerumContext(const SerumContext&) = delete;
-  SerumContext& operator=(const SerumContext&) = delete;
-  SerumContext(SerumContext&&) = default;
-  SerumContext& operator=(SerumContext&&) = default;
-
   Serum_Frame_Struc* Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
   uint8_t GetSerumVersion() const { return m_serumVersion; }
   uint32_t GetFrameWidth() const { return m_fwidth; }
