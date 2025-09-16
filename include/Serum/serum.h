@@ -25,22 +25,28 @@
 #define FLAG_RETURNED_32P_FRAME_OK 1
 #define FLAG_RETURNED_64P_FRAME_OK 2
 #define FLAG_RETURNED_EXTRA_AVAILABLE 4
+#define FLAG_RETURNED_V1_ROTATED 0x10000
+#define FLAG_RETURNED_V2_ROTATED32 0x10000
+#define FLAG_RETURNED_V2_ROTATED64 0x20000
 
 // Return values
 #define IDENTIFY_NO_FRAME 0xffffffff
 #define IDENTIFY_SAME_FRAME 0xfffffffe
 
-#define MAX_COLOR_ROTATIONS 8
-#define MAX_COLOR_ROTATIONN 16
-#define MAX_LENGTH_COLOR_ROTATION 16
-#define PALETTE_SIZE 768
-#define MAX_SPRITES_PER_FRAME 32
-#define MAX_SPRITE_DETECT_AREAS 8
-#define MAX_SPRITE_WIDTH 32
-#define MAX_SPRITE_HEIGHT 32
-#define MAX_SPRITE_SIZE 32
-#define MAX_DYNA_4COLS_PER_FRAME 256
-#define MAX_DYNA_SETS_PER_SPRITE 9
+#define MAX_DYNA_4COLS_PER_FRAME 16   // max number of color sets for dynamic content for each frame (old version)
+#define MAX_DYNA_SETS_PER_FRAMEN 32   // max number of color sets for dynamic content for each frame (new version)
+#define MAX_DYNA_SETS_PER_SPRITE 9  // max number of color sets for dynamic content for each sprite
+#define MAX_SPRITE_SIZE 128           // maximum size of the sprites
+#define MAX_SPRITE_WIDTH 256          // maximum width of the new sprites
+#define MAX_SPRITE_HEIGHT 64          // maximum height of the new sprites
+#define MAX_SPRITES_PER_FRAME 32      // maximum amount of sprites to look for per frame
+#define MAX_COLOR_ROTATIONS 8         // maximum amount of color rotations per frame
+#define MAX_COLOR_ROTATIONN 4         // maximum number of new color rotations per frame
+#define MAX_LENGTH_COLOR_ROTATION 64  // maximum number of new colors in a rotation
+#define MAX_SPRITE_DETECT_AREAS 4     // maximum number of areas to detect the sprite
+#define PALETTE_SIZE 192              // size of a palette
+#define ROTATION_SIZE (3 * MAX_COLOR_ROTATIONS)  // size of a color rotation block
+#define MAX_BACKGROUND_IMAGES 255                // max number of background images
 
 // Main data structure that the library returns
 struct SerumFrame

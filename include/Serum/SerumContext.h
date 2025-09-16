@@ -156,8 +156,8 @@ class SerumContext
   void FreeResources();
 
   bool LoadConcentrateFile(const char* filename, uint8_t flags);
-  bool LoadRegularFile(const char* filename, uint8_t flags);
-  bool LoadFilev2(const char* filename, uint8_t flags, bool uncompressed, uint32_t sizeheader);
+  bool LoadFileV1(const char* filename, uint8_t flags);
+  bool LoadFileV2(FILE* pfile, uint8_t flags, bool uncompressed, uint32_t sizeheader);
   bool SaveConcentrateFile(const char* filename);
   uint32_t IdentifyFrame(uint8_t* frame);
   uint32_t CalcCRC32(uint8_t* frame, uint8_t mask, uint32_t pixels, uint8_t shape);

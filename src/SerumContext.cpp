@@ -371,7 +371,7 @@ SerumFrame* SerumContext::Load(const char* const altcolorpath, const char* const
     return nullptr;
   }
 
-  if (LoadRegularFile(pFoundFile->c_str(), flags))
+  if (LoadFileV1(pFoundFile->c_str(), flags))
   {
     if (csvFoundFile)
     {
@@ -563,7 +563,7 @@ uint32_t SerumContext::Rotate()
   return (static_cast<uint32_t>(m_mySerum.rotationtimer) | rotationFlags);
 }
 
-bool SerumContext::LoadRegularFile(const char* filename, uint8_t flags)
+bool SerumContext::LoadFileV1(const char* filename, uint8_t flags)
 {
   if (!filename) return false;
 
@@ -624,8 +624,7 @@ bool SerumContext::LoadRegularFile(const char* filename, uint8_t flags)
   // If this is a new format file (v2), handle it differently
   if (sizeheader >= 14 * sizeof(uint32_t))
   {
-    fclose(pfile);
-    return LoadFilev2(filename, flags, uncompressedCROM, sizeheader);
+    return LoadFileV2(pfile, flags, uncompressedCROM, sizeheader);
   }
 
   // Continue with v1 format
@@ -1456,15 +1455,10 @@ bool SerumContext::SaveConcentrateFile(const char* filename)
   return true;
 }
 
-bool SerumContext::LoadFilev2(const char* filename, uint8_t flags, bool uncompressed, uint32_t sizeheader)
+bool SerumContext::LoadFileV2(FILE* pfile, uint8_t flags, bool uncompressed, uint32_t sizeheader)
 {
-  // This is called from LoadRegularFile when the header indicates v2 format
+  // This is called from LoadFileV1 when the header indicates v2 format
   // The pfile is already open and positioned after the header
-  FILE* pfile = fopen(filename, "rb");
-  if (!pfile) return false;
-
-  // Skip to after the header (romname + sizeheader already read)
-  fseek(pfile, 64 + 4, SEEK_SET);
 
   uint32_t fwidth, fheight, fwidthx, fheightx;
   if (fread(&fwidth, 4, 1, pfile) != 1 || fread(&fheight, 4, 1, pfile) != 1 || fread(&fwidthx, 4, 1, pfile) != 1 ||
@@ -1614,8 +1608,8 @@ bool SerumContext::LoadFilev2(const char* filename, uint8_t flags, bool uncompre
   m_cframesnx.my_fread(fwidthx * fheightx, m_nframes, pfile, &m_isextraframe);
   m_dynamasks.my_fread(fwidth * fheight, m_nframes, pfile);
   m_dynamasksx.my_fread(fwidthx * fheightx, m_nframes, pfile, &m_isextraframe);
-  m_dyna4colsn.my_fread(MAX_DYNA_4COLS_PER_FRAME * m_nocolors, m_nframes, pfile);
-  m_dyna4colsnx.my_fread(MAX_DYNA_4COLS_PER_FRAME * m_nocolors, m_nframes, pfile, &m_isextraframe);
+  m_dyna4colsn.my_fread(MAX_DYNA_SETS_PER_FRAMEN * m_nocolors, m_nframes, pfile);
+  m_dyna4colsnx.my_fread(MAX_DYNA_SETS_PER_FRAMEN * m_nocolors, m_nframes, pfile, &m_isextraframe);
   m_isextrasprite.my_fread(1, m_nsprites, pfile);
 
   if (!isExtraRequested) m_isextrasprite.clearIndex();
@@ -1668,17 +1662,17 @@ bool SerumContext::LoadFilev2(const char* filename, uint8_t flags, bool uncompre
 
   if (sizeheader >= 15 * sizeof(uint32_t))
   {
-    m_dynashadowsdiro.my_fread(MAX_DYNA_4COLS_PER_FRAME, m_nframes, pfile);
-    m_dynashadowscolo.my_fread(MAX_DYNA_4COLS_PER_FRAME, m_nframes, pfile);
-    m_dynashadowsdirx.my_fread(MAX_DYNA_4COLS_PER_FRAME, m_nframes, pfile, &m_isextraframe);
-    m_dynashadowscolx.my_fread(MAX_DYNA_4COLS_PER_FRAME, m_nframes, pfile, &m_isextraframe);
+    m_dynashadowsdiro.my_fread(MAX_DYNA_SETS_PER_FRAMEN, m_nframes, pfile);
+    m_dynashadowscolo.my_fread(MAX_DYNA_SETS_PER_FRAMEN, m_nframes, pfile);
+    m_dynashadowsdirx.my_fread(MAX_DYNA_SETS_PER_FRAMEN, m_nframes, pfile, &m_isextraframe);
+    m_dynashadowscolx.my_fread(MAX_DYNA_SETS_PER_FRAMEN, m_nframes, pfile, &m_isextraframe);
   }
   else
   {
-    m_dynashadowsdiro.reserve(MAX_DYNA_4COLS_PER_FRAME);
-    m_dynashadowscolo.reserve(MAX_DYNA_4COLS_PER_FRAME);
-    m_dynashadowsdirx.reserve(MAX_DYNA_4COLS_PER_FRAME);
-    m_dynashadowscolx.reserve(MAX_DYNA_4COLS_PER_FRAME);
+    m_dynashadowsdiro.reserve(MAX_DYNA_SETS_PER_FRAMEN);
+    m_dynashadowscolo.reserve(MAX_DYNA_SETS_PER_FRAMEN);
+    m_dynashadowsdirx.reserve(MAX_DYNA_SETS_PER_FRAMEN);
+    m_dynashadowscolx.reserve(MAX_DYNA_SETS_PER_FRAMEN);
   }
 
   if (sizeheader >= 18 * sizeof(uint32_t))
@@ -1770,12 +1764,6 @@ bool SerumContext::LoadFilev2(const char* filename, uint8_t flags, bool uncompre
 
   m_mySerum.SerumVersion = SERUM_V2;
   ResetColorRotations();
-
-  // Clean up temporary file if it was extracted
-  if (!uncompressed)
-  {
-    remove(filename);
-  }
 
   return true;
 }
