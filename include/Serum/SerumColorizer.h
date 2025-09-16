@@ -39,7 +39,7 @@ class SERUMAPI Serum
   void SetMaximumUnknownFramesToSkip(uint8_t maximum);
   void SetStandardPalette(const uint8_t* palette, int bitDepth);
 
-  const Serum_Frame_Struc* GetFrameData() const;
+  const SerumFrame* GetFrameData() const;
 
   bool IsLoaded() const;
   uint8_t GetSerumVersion() const;

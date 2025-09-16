@@ -310,7 +310,7 @@ void SerumContext::Dispose()
   m_serumVersion = 0;
 }
 
-Serum_Frame_Struc* SerumContext::Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
+SerumFrame* SerumContext::Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
 {
   FreeResources();
 

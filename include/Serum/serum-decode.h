@@ -19,10 +19,10 @@
  * FLAG_REQUEST_FILL_MODIFIED_ELEMENTS (Serum_Rotate() fills the modifiedelementsXX buffers to know which points have
  * changed in the rotation)
  *
- *  @return A pointer to the Serum_Frame_Struc as described in the serum.h file (to keep and read all along the use of
+ *  @return A pointer to the SerumFrame as described in the serum.h file (to keep and read all along the use of
  * the loaded Serum)
  */
-SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
+SERUM_API SerumFrame* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
 SERUM_API void Serum_SetIgnoreUnknownFramesTimeout(uint16_t milliseconds);
 
 SERUM_API void Serum_SetMaximumUnknownFramesToSkip(uint8_t maximum);
@@ -33,7 +33,7 @@ SERUM_API void Serum_SetStandardPalette(const uint8_t* palette, const int bitDep
  */
 SERUM_API void Serum_Dispose(void);
 
-/** @brief Colorize a frame and set the values in the Serum_Frame_Struc (corresponding to the pointer returned at
+/** @brief Colorize a frame and set the values in the SerumFrame (corresponding to the pointer returned at
  * Serum_Load() time)
  *
  * @param Frame: a buffer to the rom uncolorized frame containing width*height bytes with [0,3] or [0,15] values

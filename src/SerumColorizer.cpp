@@ -69,7 +69,7 @@ void Serum::SetStandardPalette(const uint8_t* palette, int bitDepth)
   m_context->SetStandardPalette(palette, bitDepth);
 }
 
-const Serum_Frame_Struc* Serum::GetFrameData() const
+const SerumFrame* Serum::GetFrameData() const
 {
   if (m_loaded && m_context)
   {

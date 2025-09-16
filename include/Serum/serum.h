@@ -43,7 +43,7 @@
 #define MAX_DYNA_SETS_PER_SPRITE 9
 
 // Main data structure that the library returns
-struct Serum_Frame_Struc
+struct SerumFrame
 {
   // data for v1 Serum format
   uint8_t* frame;      // return the colorized frame

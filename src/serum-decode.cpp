@@ -12,9 +12,9 @@ static Serum::Serum& GetSerum()
 }
 
 // Core API
-SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
+SERUM_API SerumFrame* Serum_Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
 {
-  return GetSerum().Load(altcolorpath, romname, flags) ? const_cast<Serum_Frame_Struc*>(GetSerum().GetFrameData())
+  return GetSerum().Load(altcolorpath, romname, flags) ? const_cast<SerumFrame*>(GetSerum().GetFrameData())
                                                        : nullptr;
 }
 SERUM_API void Serum_Dispose(void) { GetSerum().Dispose(); }

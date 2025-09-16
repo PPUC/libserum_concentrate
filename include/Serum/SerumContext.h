@@ -18,7 +18,7 @@ class SerumContext
   SerumContext();
   ~SerumContext();
 
-  Serum_Frame_Struc* Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
+  SerumFrame* Load(const char* const altcolorpath, const char* const romname, uint8_t flags);
   uint8_t GetSerumVersion() const { return m_serumVersion; }
   uint32_t GetFrameWidth() const { return m_fwidth; }
   uint32_t GetFrameHeight() const { return m_fheight; }
@@ -73,7 +73,7 @@ class SerumContext
   bool m_enabled = true;
   bool m_isoriginalrequested = true;
   bool m_isextrarequested = false;
-  Serum_Frame_Struc m_mySerum;
+  SerumFrame m_mySerum;
 
   uint32_t m_fwidthx = 0;
   uint32_t m_fheightx = 0;
