@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "SerumColorizer.h"
-#include "serum-decode.h"
+#include "Serum/SerumColorizer.h"
+#include "Serum/serum-decode.h"
 
 int main(int argc, const char* argv[])
 {

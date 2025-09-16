@@ -1,8 +1,8 @@
-#include "serum-decode.h"
+#include "Serum/serum-decode.h"
 
-#include "SceneGenerator.h"
-#include "SerumColorizer.h"
-#include "SerumContext.h"
+#include "Serum/SceneGenerator.h"
+#include "Serum/SerumColorizer.h"
+#include "Serum/SerumContext.h"
 
 static std::unique_ptr<Serum::Serum> g_serum = nullptr;
 static Serum::Serum& GetSerum()

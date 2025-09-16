@@ -8,7 +8,7 @@
 #define SERUM_CALLBACK
 #endif
 
-#include "serum-version.h"
+#include "serum.h"
 
 /** @brief Load a Serum file.
  *

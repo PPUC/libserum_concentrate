@@ -1,4 +1,4 @@
-#include "SerumContext.h"
+#include "Serum/SerumContext.h"
 
 #include <miniz/miniz.h>
 
@@ -9,7 +9,7 @@
 #include <cstring>
 #include <filesystem>
 
-#include "LZ4Stream.h"
+#include "Serum/LZ4Stream.h"
 
 namespace Serum
 {

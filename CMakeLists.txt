@@ -32,7 +32,7 @@ elseif(PLATFORM STREQUAL "android")
 endif()
 
 
-file(READ include/serum-version.h version)
+file(READ include/Serum/serum.h version)
 string(REGEX MATCH "SERUM_VERSION_MAJOR[ ]+([0-9]+)" _tmp ${version})
 set(VERSION_MAJOR "${CMAKE_MATCH_1}")
 string(REGEX MATCH "SERUM_VERSION_MINOR[ ]+([0-9]+)" _tmp ${version})
@@ -117,8 +117,8 @@ if(BUILD_SHARED)
       LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
    )
    install(FILES
-      include/*.h
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum)
+      include/Serum/*.h
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum/)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
       add_executable(serum_test
@@ -148,8 +148,8 @@ if(BUILD_STATIC)
       LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
    )
    install(FILES
-      include/*.h
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum)
+      include/Serum/*.h
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Serum/)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
       add_executable(serum_test_s

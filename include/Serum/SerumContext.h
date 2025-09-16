@@ -7,7 +7,7 @@
 
 #include "SceneGenerator.h"
 #include "SparseVector.h"
-#include "serum-version.h"
+#include "serum.h"
 
 // Constants
 #define MAX_COLOR_ROTATIONS 8

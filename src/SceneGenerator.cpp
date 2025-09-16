@@ -1,4 +1,4 @@
-#include "SceneGenerator.h"
+#include "Serum/SceneGenerator.h"
 
 #include <algorithm>
 #include <cctype>

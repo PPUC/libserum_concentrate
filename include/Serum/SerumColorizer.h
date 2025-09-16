@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "serum-version.h"
 #include "SerumContext.h"
+#include "serum.h"
 
 // Platform-specific API macros
 #ifdef _MSC_VER

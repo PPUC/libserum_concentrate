@@ -31,7 +31,7 @@
 #define IDENTIFY_SAME_FRAME 0xfffffffe
 
 // Main data structure that the library returns
-typedef struct
+struct Serum_Frame_Struc
 {
   // data for v1 Serum format
   uint8_t* frame;      // return the colorized frame
@@ -67,4 +67,4 @@ typedef struct
   uint32_t triggerID;  // return 0xffff if no trigger for that frame, the ID of the trigger if one is set for that frame
   uint32_t frameID;    // for CDMD ingame tester
   uint32_t rotationtimer;
-} Serum_Frame_Struc;
+};

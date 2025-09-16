@@ -1,8 +1,9 @@
+#include "Serum/SerumColorizer.h"
+
 #include <sstream>
 
-#include "SerumColorizer.h"
-#include "SerumContext.h"
-#include "serum-version.h"
+#include "Serum/SerumContext.h"
+#include "Serum/serum.h"
 
 namespace Serum
 {
@@ -81,16 +82,17 @@ bool Serum::IsLoaded() const { return m_loaded; }
 
 uint8_t Serum::GetSerumVersion() const { return m_context->GetSerumVersion(); }
 
-uint32_t Serum::GetFrameWidth() const { return  m_context->GetFrameWidth(); }
+uint32_t Serum::GetFrameWidth() const { return m_context->GetFrameWidth(); }
 
-uint32_t Serum::GetFrameHeight() const { return  m_context->GetFrameHeight(); }
+uint32_t Serum::GetFrameHeight() const { return m_context->GetFrameHeight(); }
 
 uint32_t Serum::GetFrameCount() const { return m_context->GetFrameCount(); }
 
 std::string Serum::GetVersion()
 {
   std::ostringstream oss;
-  oss << SERUM_VERSION_MAJOR << "." << SERUM_VERSION_MINOR << "." << SERUM_VERSION_PATCH;
+  oss << SERUM_VERSION_MAJOR << "." << SERUM_VERSION_MINOR << "." << SERUM_VERSION_PATCH << "-concentrate."
+      << SERUM_CONCENTRATE_VERSION;
   return oss.str();
 }
 
