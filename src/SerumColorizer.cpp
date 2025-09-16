@@ -12,14 +12,14 @@ Serum::Serum() : m_context(std::make_unique<SerumContext>()), m_loaded(false) {}
 
 Serum::~Serum() = default;
 
-bool Serum::Load(const std::string& altcolorpath, const std::string& romname, uint8_t flags)
+bool Serum::Load(const char* const altcolorpath, const char* const romname, uint8_t flags)
 {
   if (m_loaded)
   {
     Dispose();
   }
 
-  auto* result = m_context->Load(altcolorpath.c_str(), romname.c_str(), flags);
+  auto* result = m_context->Load(altcolorpath, romname, flags);
   m_loaded = (result != nullptr);
   return m_loaded;
 }

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 
 #include "SerumContext.h"
 #include "serum.h"
@@ -25,7 +24,7 @@ class SERUMAPI Serum
   Serum();
   ~Serum();
 
-  bool Load(const std::string& altcolorpath, const std::string& romname, uint8_t flags = 0);
+  bool Load(const char* const altcolorpath, const char* const romname, uint8_t flags = 0);
   void Dispose();
 
   uint32_t Colorize(uint8_t* frame);
