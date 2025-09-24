@@ -1277,7 +1277,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += romname;
 	pathbuf += '/';
 
-	std::optional<std::string> csvFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".csv");
+	std::optional<std::string> csvFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".pup.csv");
 	if (csvFoundFile)
 	{
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // request both frame types for updating concentrate
@@ -1285,6 +1285,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 
 	Serum_Frame_Struc* result = NULL;
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
+/*
 	if (pFoundFile)
 	{
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
@@ -1294,7 +1295,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 			Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}
-
+*/
 	if (!result)
 	{
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
@@ -1307,14 +1308,14 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 			return NULL;
 		}
 		result = Serum_LoadFilev1(pFoundFile->c_str(), flags);
-
+/*
 		if (result)
 		{
 			if (csvFoundFile) sceneGenerator->parseCSV(csvFoundFile->c_str());
 			Serum_SaveConcentrate(pFoundFile->c_str());
 		}
+*/
 	}
-
 	if (result && sceneGenerator->isActive()) sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);
 
 	return result;
