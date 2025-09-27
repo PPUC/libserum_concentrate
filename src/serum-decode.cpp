@@ -63,6 +63,7 @@ uint32_t nocolors, nccolors;
 uint32_t ncompmasks, nmovmasks;
 uint32_t nsprites;
 uint16_t nbackgrounds;
+int is256x64;
 // data
 uint32_t* hashcodes = NULL;
 uint8_t* shapecompmode = NULL;
@@ -330,7 +331,8 @@ uint32_t crc32_fast_mask_shape(uint8_t* source, uint8_t* mask, uint32_t n)
 
 uint32_t calc_crc32(uint8_t* source, uint8_t mask, uint32_t n, uint8_t Shape)
 {
-	const uint32_t pixels = fwidth * fheight;
+	uint32_t pixels;
+	if (!is256x64) pixels= fwidth * fheight; else pixels = 256 * 64;
 	if (mask < 255)
 	{
 		uint8_t* pmask = &compmasks[mask * pixels];
@@ -472,11 +474,14 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	my_fread(&ncompmasks, 4, 1, pfile);
 	my_fread(&nsprites, 4, 1, pfile);
 	my_fread(&nbackgrounds, 2, 1, pfile); // nbackgrounds is a uint16_t
+	if (sizeheader >= 20 * sizeof(uint32_t)) my_fread(&is256x64, sizeof(int), 1, pfile);
+	else is256x64 = 0;
 
 	hashcodes = (uint32_t*)malloc(sizeof(uint32_t) * nframes);
 	shapecompmode = (uint8_t*)malloc(nframes);
 	compmaskID = (uint8_t*)malloc(nframes);
-	compmasks = (uint8_t*)malloc(ncompmasks * fwidth * fheight);
+	if (is256x64) compmasks = (uint8_t*)malloc(ncompmasks * 256 * 64);
+	else compmasks = (uint8_t*)malloc(ncompmasks * fwidth * fheight);
 	isextraframe = (uint8_t*)malloc(nframes);
 	cframesn = (uint16_t*)malloc(nframes * fwidth * fheight * sizeof(uint16_t));
 	cframesnx = (uint16_t*)malloc(nframes * fwidthx * fheightx * sizeof(uint16_t));
@@ -566,7 +571,8 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	my_fread(hashcodes, 4, nframes, pfile);
 	my_fread(shapecompmode, 1, nframes, pfile);
 	my_fread(compmaskID, 1, nframes, pfile);
-	my_fread(compmasks, 1, ncompmasks * fwidth * fheight, pfile);
+	if (is256x64) my_fread(compmasks, 1, ncompmasks * 256 * 64, pfile);
+	else my_fread(compmasks, 1, ncompmasks * fwidth * fheight, pfile);
 	my_fread(isextraframe, 1, nframes, pfile);
 	for (uint32_t ti = 0; ti < nframes; ti++)
 	{
@@ -951,7 +957,8 @@ uint32_t Identify_Frame(uint8_t* frame)
 	if (!cromloaded) return IDENTIFY_NO_FRAME;
 	memset(framechecked, false, nframes);
 	uint16_t tj = lastfound;  // we start from the frame we last found
-	const uint32_t pixels = fwidth * fheight;
+	uint32_t pixels;
+	if (!is256x64) pixels = fwidth * fheight; else pixels = 256 * 64;
 	do
 	{
 		if (!framechecked[tj])
