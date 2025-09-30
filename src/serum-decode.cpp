@@ -190,7 +190,7 @@ void Serum_free(void)
 {
 	// Free the memory for a full Serum whatever the format version
 	g_serumData.Clear();
-	
+
 	Free_element((void**)&framechecked);
 	Free_element((void**)&mySerum.frame);
 	Free_element((void**)&mySerum.frame32);
@@ -1014,10 +1014,14 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	else
 		nbackgrounds = 0;
 	// allocate memory for the serum format
+	uint8_t* spritedescriptionso = (uint8_t*)malloc(nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+	uint8_t* spritedescriptionsc = (uint8_t*)malloc(nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+
 	mySerum.frame = (uint8_t*)malloc(fwidth * fheight);
 	mySerum.palette = (uint8_t*)malloc(3 * 64);
 	mySerum.rotations = (uint8_t*)malloc(MAX_COLOR_ROTATIONS * 3);
 	if (
+		((nsprites > 0) && (!spritedescriptionso || !spritedescriptionsc)) ||
 		!mySerum.frame || !mySerum.palette || !mySerum.rotations)
 	{
 		Serum_free();
@@ -1039,8 +1043,19 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	g_serumData.dynamasks.my_fread(fwidth * fheight, nframes, pfile);
 	g_serumData.dyna4cols.my_fread(MAX_DYNA_4COLS_PER_FRAME * nocolors, nframes, pfile);
 	g_serumData.framesprites.my_fread(MAX_SPRITES_PER_FRAME, nframes, pfile);
-	g_serumData.spritedescriptionso.my_fread(MAX_SPRITE_SIZE * MAX_SPRITE_SIZE, nsprites, pfile);
-	g_serumData.spritedescriptionsc.my_fread(MAX_SPRITE_SIZE * MAX_SPRITE_SIZE, nsprites, pfile);
+
+	for (int ti = 0; ti < (int)nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE; ti++)
+	{
+		my_fread(&spritedescriptionsc[ti], 1, 1, pfile);
+		my_fread(&spritedescriptionso[ti], 1, 1, pfile);
+	}
+	for (uint32_t i = 0; i < nsprites; i++)
+	{
+		g_serumData.spritedescriptionsc.set(i, &spritedescriptionsc[i * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE], MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+		g_serumData.spritedescriptionso.set(i, &spritedescriptionso[i * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE], MAX_SPRITE_SIZE * MAX_SPRITE_SIZE);
+	}
+	Free_element((void**)&spritedescriptionso);
+	Free_element((void**)&spritedescriptionsc);
 	g_serumData.activeframes.my_fread(1, nframes, pfile);
 	g_serumData.colorrotations.my_fread(3 * MAX_COLOR_ROTATIONS, nframes, pfile);
 	g_serumData.spritedetdwords.my_fread(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
