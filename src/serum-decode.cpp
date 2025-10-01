@@ -797,11 +797,11 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		}
 	}
 
-	g_serumData.hashcodes.my_fread(1, nframes, pfile);
-	g_serumData.shapecompmode.my_fread(1, nframes, pfile);
-	g_serumData.compmaskID.my_fread(1, nframes, pfile);
-	g_serumData.compmasks.my_fread(fwidth * fheight, ncompmasks, pfile);
-	g_serumData.isextraframe.my_fread(1, nframes, pfile);
+	g_serumData.hashcodes.readFromCRomFile(1, nframes, pfile);
+	g_serumData.shapecompmode.readFromCRomFile(1, nframes, pfile);
+	g_serumData.compmaskID.readFromCRomFile(1, nframes, pfile);
+	g_serumData.compmasks.readFromCRomFile(fwidth * fheight, ncompmasks, pfile);
+	g_serumData.isextraframe.readFromCRomFile(1, nframes, pfile);
 	if (isextrarequested) {
 		for (uint32_t ti = 0; ti < nframes; ti++)
 		{
@@ -813,41 +813,41 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		}
 	}
 	else g_serumData.isextraframe.clearIndex();
-	g_serumData.cframesn.my_fread(fwidth * fheight, nframes, pfile);
-	g_serumData.cframesnx.my_fread(fwidthx * fheightx, nframes, pfile, &g_serumData.isextraframe);
-	g_serumData.dynamasks.my_fread(fwidth * fheight, nframes, pfile);
-	g_serumData.dynamasksx.my_fread(fwidthx * fheightx, nframes, pfile, &g_serumData.isextraframe);
-	g_serumData.dyna4colsn. my_fread(MAX_DYNA_SETS_PER_FRAMEN * nocolors, nframes, pfile);
-	g_serumData.dyna4colsnx.my_fread(MAX_DYNA_SETS_PER_FRAMEN * nocolors, nframes, pfile, &g_serumData.isextraframe);
-	g_serumData.isextrasprite.my_fread(1, nsprites, pfile);
+	g_serumData.cframesn.readFromCRomFile(fwidth * fheight, nframes, pfile);
+	g_serumData.cframesnx.readFromCRomFile(fwidthx * fheightx, nframes, pfile, &g_serumData.isextraframe);
+	g_serumData.dynamasks.readFromCRomFile(fwidth * fheight, nframes, pfile);
+	g_serumData.dynamasksx.readFromCRomFile(fwidthx * fheightx, nframes, pfile, &g_serumData.isextraframe);
+	g_serumData.dyna4colsn. readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN * nocolors, nframes, pfile);
+	g_serumData.dyna4colsnx.readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN * nocolors, nframes, pfile, &g_serumData.isextraframe);
+	g_serumData.isextrasprite.readFromCRomFile(1, nsprites, pfile);
 	if (!isextrarequested) g_serumData.isextrasprite.clearIndex();
-	g_serumData.framesprites.my_fread(MAX_SPRITES_PER_FRAME, nframes, pfile);
-	g_serumData.spriteoriginal.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
-	g_serumData.spritecolored.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
-	g_serumData.spritemaskx.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
-	g_serumData.spritecoloredx.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
-	g_serumData.activeframes.my_fread(1, nframes, pfile);
-	g_serumData.colorrotationsn.my_fread(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, nframes, pfile);
-	g_serumData.colorrotationsnx.my_fread(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, nframes, pfile, &g_serumData.isextraframe);
-	g_serumData.spritedetdwords.my_fread(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
-	g_serumData.spritedetdwordpos.my_fread(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
-	g_serumData.spritedetareas.my_fread(4 * MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
-	g_serumData.triggerIDs.my_fread(1, nframes, pfile);
-	g_serumData.framespriteBB.my_fread(MAX_SPRITES_PER_FRAME * 4, nframes, pfile, &g_serumData.framesprites);
-	g_serumData.isextrabackground.my_fread(1, nbackgrounds, pfile);
+	g_serumData.framesprites.readFromCRomFile(MAX_SPRITES_PER_FRAME, nframes, pfile);
+	g_serumData.spriteoriginal.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
+	g_serumData.spritecolored.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
+	g_serumData.spritemaskx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
+	g_serumData.spritecoloredx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
+	g_serumData.activeframes.readFromCRomFile(1, nframes, pfile);
+	g_serumData.colorrotationsn.readFromCRomFile(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, nframes, pfile);
+	g_serumData.colorrotationsnx.readFromCRomFile(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, nframes, pfile, &g_serumData.isextraframe);
+	g_serumData.spritedetdwords.readFromCRomFile(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.spritedetdwordpos.readFromCRomFile(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.spritedetareas.readFromCRomFile(4 * MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.triggerIDs.readFromCRomFile(1, nframes, pfile);
+	g_serumData.framespriteBB.readFromCRomFile(MAX_SPRITES_PER_FRAME * 4, nframes, pfile, &g_serumData.framesprites);
+	g_serumData.isextrabackground.readFromCRomFile(1, nbackgrounds, pfile);
 	if (!isextrarequested) g_serumData.isextrabackground.clearIndex();
-	g_serumData.backgroundframesn.my_fread(fwidth * fheight, nbackgrounds, pfile);
-	g_serumData.backgroundframesnx.my_fread(fwidthx * fheightx, nbackgrounds, pfile, &g_serumData.isextrabackground);
-	g_serumData.backgroundIDs.my_fread(1, nframes, pfile);
-	g_serumData.backgroundmask.my_fread(fwidth * fheight, nframes, pfile, &g_serumData.backgroundIDs);
-	g_serumData.backgroundmaskx.my_fread(fwidthx * fheightx, nframes, pfile, &g_serumData.backgroundIDs);
+	g_serumData.backgroundframesn.readFromCRomFile(fwidth * fheight, nbackgrounds, pfile);
+	g_serumData.backgroundframesnx.readFromCRomFile(fwidthx * fheightx, nbackgrounds, pfile, &g_serumData.isextrabackground);
+	g_serumData.backgroundIDs.readFromCRomFile(1, nframes, pfile);
+	g_serumData.backgroundmask.readFromCRomFile(fwidth * fheight, nframes, pfile, &g_serumData.backgroundIDs);
+	g_serumData.backgroundmaskx.readFromCRomFile(fwidthx * fheightx, nframes, pfile, &g_serumData.backgroundIDs);
 
 	if (sizeheader >= 15 * sizeof(uint32_t))
 	{
-		g_serumData.dynashadowsdiro.my_fread(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile);
-		g_serumData.dynashadowscolo.my_fread(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile);
-		g_serumData.dynashadowsdirx.my_fread(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile, &g_serumData.isextraframe);
-		g_serumData.dynashadowscolx.my_fread(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile, &g_serumData.isextraframe);
+		g_serumData.dynashadowsdiro.readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile);
+		g_serumData.dynashadowscolo.readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile);
+		g_serumData.dynashadowsdirx.readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile, &g_serumData.isextraframe);
+		g_serumData.dynashadowscolx.readFromCRomFile(MAX_DYNA_SETS_PER_FRAMEN, nframes, pfile, &g_serumData.isextraframe);
 	}
 	else {
 		g_serumData.dynashadowsdiro.reserve(MAX_DYNA_SETS_PER_FRAMEN);
@@ -858,10 +858,10 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 
 	if (sizeheader >= 18 * sizeof(uint32_t))
 	{
-		g_serumData.dynasprite4cols.my_fread(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile);
-		g_serumData.dynasprite4colsx.my_fread(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile, &g_serumData.isextraframe);
-		g_serumData.dynaspritemasks.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
-		g_serumData.dynaspritemasksx.my_fread(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextraframe);
+		g_serumData.dynasprite4cols.readFromCRomFile(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile);
+		g_serumData.dynasprite4colsx.readFromCRomFile(MAX_DYNA_SETS_PER_SPRITE * nocolors, nsprites, pfile, &g_serumData.isextraframe);
+		g_serumData.dynaspritemasks.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile);
+		g_serumData.dynaspritemasksx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, nsprites, pfile, &g_serumData.isextraframe);
 	}
 	else {
 		g_serumData.dynasprite4cols.reserve(MAX_DYNA_SETS_PER_SPRITE * nocolors);
@@ -872,7 +872,7 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 
 	if (sizeheader >= 19 * sizeof(uint32_t))
 	{
-		g_serumData.sprshapemode.my_fread(1, nsprites, pfile);
+		g_serumData.sprshapemode.readFromCRomFile(1, nsprites, pfile);
 		for (uint32_t i = 0; i < nsprites; i++)
 		{
 			if (g_serumData.sprshapemode[i][0] > 0)
@@ -1030,19 +1030,19 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 		return NULL;
 	}
 	// read the cRom file
-	g_serumData.hashcodes.my_fread(1, nframes, pfile);
-	g_serumData.shapecompmode.my_fread(1, nframes, pfile);
-	g_serumData.compmaskID.my_fread(1, nframes, pfile);
-	g_serumData.movrctID.my_fread(1, nframes, pfile);
+	g_serumData.hashcodes.readFromCRomFile(1, nframes, pfile);
+	g_serumData.shapecompmode.readFromCRomFile(1, nframes, pfile);
+	g_serumData.compmaskID.readFromCRomFile(1, nframes, pfile);
+	g_serumData.movrctID.readFromCRomFile(1, nframes, pfile);
 	g_serumData.movrctID.clear(); // we don't need this anymore, but we need to read it to skip the data in the file
-	g_serumData.compmasks.my_fread(fwidth * fheight, ncompmasks, pfile);
-	g_serumData.movrcts.my_fread(fwidth * fheight, nmovmasks, pfile);
+	g_serumData.compmasks.readFromCRomFile(fwidth * fheight, ncompmasks, pfile);
+	g_serumData.movrcts.readFromCRomFile(fwidth * fheight, nmovmasks, pfile);
 	g_serumData.movrcts.clear(); // we don't need this anymore, but we need to read it to skip the data in the file
-	g_serumData.cpal.my_fread(3 * nccolors, nframes, pfile);
-	g_serumData.cframes.my_fread(fwidth * fheight, nframes, pfile);
-	g_serumData.dynamasks.my_fread(fwidth * fheight, nframes, pfile);
-	g_serumData.dyna4cols.my_fread(MAX_DYNA_4COLS_PER_FRAME * nocolors, nframes, pfile);
-	g_serumData.framesprites.my_fread(MAX_SPRITES_PER_FRAME, nframes, pfile);
+	g_serumData.cpal.readFromCRomFile(3 * nccolors, nframes, pfile);
+	g_serumData.cframes.readFromCRomFile(fwidth * fheight, nframes, pfile);
+	g_serumData.dynamasks.readFromCRomFile(fwidth * fheight, nframes, pfile);
+	g_serumData.dyna4cols.readFromCRomFile(MAX_DYNA_4COLS_PER_FRAME * nocolors, nframes, pfile);
+	g_serumData.framesprites.readFromCRomFile(MAX_SPRITES_PER_FRAME, nframes, pfile);
 
 	for (int ti = 0; ti < (int)nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE; ti++)
 	{
@@ -1056,21 +1056,21 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	}
 	Free_element((void**)&spritedescriptionso);
 	Free_element((void**)&spritedescriptionsc);
-	g_serumData.activeframes.my_fread(1, nframes, pfile);
-	g_serumData.colorrotations.my_fread(3 * MAX_COLOR_ROTATIONS, nframes, pfile);
-	g_serumData.spritedetdwords.my_fread(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
-	g_serumData.spritedetdwordpos.my_fread(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
-	g_serumData.spritedetareas.my_fread(4 * MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.activeframes.readFromCRomFile(1, nframes, pfile);
+	g_serumData.colorrotations.readFromCRomFile(3 * MAX_COLOR_ROTATIONS, nframes, pfile);
+	g_serumData.spritedetdwords.readFromCRomFile(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.spritedetdwordpos.readFromCRomFile(MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
+	g_serumData.spritedetareas.readFromCRomFile(4 * MAX_SPRITE_DETECT_AREAS, nsprites, pfile);
 	mySerum.ntriggers = 0;
 	if (sizeheader >= 11 * sizeof(uint32_t))
 	{
-		g_serumData.triggerIDs.my_fread(1, nframes, pfile);
+		g_serumData.triggerIDs.readFromCRomFile(1, nframes, pfile);
 		for (uint32_t ti = 0; ti < nframes; ti++)
 		{
 			if (g_serumData.triggerIDs[ti][0] != 0xffffffff) mySerum.ntriggers++;
 		}
 	}
-	if (sizeheader >= 12 * sizeof(uint32_t)) g_serumData.framespriteBB.my_fread(MAX_SPRITES_PER_FRAME * 4, nframes, pfile, &g_serumData.framesprites);
+	if (sizeheader >= 12 * sizeof(uint32_t)) g_serumData.framespriteBB.readFromCRomFile(MAX_SPRITES_PER_FRAME * 4, nframes, pfile, &g_serumData.framesprites);
 	else
 	{
 		for (uint32_t tj = 0; tj < nframes; tj++)
@@ -1088,9 +1088,9 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	}
 	if (sizeheader >= 13 * sizeof(uint32_t))
 	{
-		g_serumData.backgroundframes.my_fread(fwidth * fheight, nbackgrounds, pfile);
-		g_serumData.backgroundIDs.my_fread(1, nframes, pfile);
-		g_serumData.backgroundBB.my_fread(4, nframes, pfile, &g_serumData.backgroundIDs);
+		g_serumData.backgroundframes.readFromCRomFile(fwidth * fheight, nbackgrounds, pfile);
+		g_serumData.backgroundIDs.readFromCRomFile(1, nframes, pfile);
+		g_serumData.backgroundBB.readFromCRomFile(4, nframes, pfile, &g_serumData.backgroundIDs);
 	}
 	fclose(pfile);
 

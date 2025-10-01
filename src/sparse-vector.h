@@ -148,7 +148,7 @@ public:
 	}
 
 	template <typename U = T>
-	void my_fread(size_t elementSize, uint32_t numElements, FILE *stream, SparseVector<U> *parent = nullptr)
+	void readFromCRomFile(size_t elementSize, uint32_t numElements, FILE *stream, SparseVector<U> *parent = nullptr)
 	{
 		if (useIndex)
 		{
