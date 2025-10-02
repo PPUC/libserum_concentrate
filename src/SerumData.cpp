@@ -2,6 +2,7 @@
 
 SerumData::SerumData() :
     SerumVersion(0),
+    is256x64(false),
     hashcodes(0, true),
     shapecompmode(0),
     compmaskID(255),

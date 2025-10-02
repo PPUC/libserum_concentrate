@@ -26,6 +26,7 @@ public:
     uint32_t ncompmasks, nmovmasks;
     uint32_t nsprites;
     uint16_t nbackgrounds;
+    bool is256x64;
 
     // Vector data
     SparseVector<uint32_t> hashcodes;
