@@ -354,11 +354,6 @@ uint32_t min(uint32_t v1, uint32_t v2)
 
 long serum_file_length;
 
-size_t my_fread(void* pBuffer, size_t sizeElement, size_t nElements, FILE* stream)
-{
-	return fread(pBuffer, sizeElement, nElements, stream);
-}
-
 bool Serum_SaveConcentrate(const char *filename)
 {
 	if (!cromloaded)
@@ -702,10 +697,10 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 
 Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncompressedCROM, char* pathbuf, uint32_t sizeheader)
 {
-	my_fread(&g_serumData.fwidth, 4, 1, pfile);
-	my_fread(&g_serumData.fheight, 4, 1, pfile);
-	my_fread(&g_serumData.fwidthx, 4, 1, pfile);
-	my_fread(&g_serumData.fheightx, 4, 1, pfile);
+	fread(&g_serumData.fwidth, 4, 1, pfile);
+	fread(&g_serumData.fheight, 4, 1, pfile);
+	fread(&g_serumData.fwidthx, 4, 1, pfile);
+	fread(&g_serumData.fheightx, 4, 1, pfile);
 	isoriginalrequested = false;
 	isextrarequested = false;
 	mySerum.width32 = 0;
@@ -737,8 +732,8 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 			mySerum.width32 = g_serumData.fwidthx;
 		}
 	}
-	my_fread(&g_serumData.nframes, 4, 1, pfile);
-	my_fread(&g_serumData.nocolors, 4, 1, pfile);
+	fread(&g_serumData.nframes, 4, 1, pfile);
+	fread(&g_serumData.nocolors, 4, 1, pfile);
 	mySerum.nocolors = g_serumData.nocolors;
 	if ((g_serumData.fwidth == 0) || (g_serumData.fheight == 0) || (g_serumData.nframes == 0) || (g_serumData.nocolors == 0))
 	{
@@ -747,13 +742,13 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 		enabled = false;
 		return NULL;
 	}
-	my_fread(&g_serumData.ncompmasks, 4, 1, pfile);
-	my_fread(&g_serumData.nsprites, 4, 1, pfile);
-	my_fread(&g_serumData.nbackgrounds, 2, 1, pfile); // g_serumData.nbackgrounds is a uint16_t
+	fread(&g_serumData.ncompmasks, 4, 1, pfile);
+	fread(&g_serumData.nsprites, 4, 1, pfile);
+	fread(&g_serumData.nbackgrounds, 2, 1, pfile); // g_serumData.nbackgrounds is a uint16_t
 	if (sizeheader >= 20 * sizeof(uint32_t))
 	{
 		int is256x64;
-		my_fread(&is256x64, sizeof(int), 1, pfile);
+		fread(&is256x64, sizeof(int), 1, pfile);
 		g_serumData.is256x64 = is256x64 != 0;
 	}
 
@@ -819,8 +814,8 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	g_serumData.framesprites.readFromCRomFile(MAX_SPRITES_PER_FRAME, g_serumData.nframes, pfile);
 	g_serumData.spriteoriginal.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile);
 	g_serumData.spritecolored.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile);
-	g_serumData.spritemaskx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
-	g_serumData.spritecoloredx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile, &g_serumData.isextrasprite); // @todo: check if g_serumData.isextrasprite could be used as parent
+	g_serumData.spritemaskx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile, &g_serumData.isextrasprite);
+	g_serumData.spritecoloredx.readFromCRomFile(MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT, g_serumData.nsprites, pfile, &g_serumData.isextrasprite);
 	g_serumData.activeframes.readFromCRomFile(1, g_serumData.nframes, pfile);
 	g_serumData.colorrotationsn.readFromCRomFile(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, g_serumData.nframes, pfile);
 	g_serumData.colorrotationsnx.readFromCRomFile(MAX_LENGTH_COLOR_ROTATION * MAX_COLOR_ROTATIONN, g_serumData.nframes, pfile, &g_serumData.isextraframe);
@@ -978,22 +973,22 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	}
 
 	// read the header to know how much memory is needed
-	my_fread(g_serumData.rname, 1, 64, pfile);
+	fread(g_serumData.rname, 1, 64, pfile);
 	uint32_t sizeheader;
-	my_fread(&sizeheader, 4, 1, pfile);
+	fread(&sizeheader, 4, 1, pfile);
 	// if this is a new format file, we load with Serum_LoadNewFile()
 	if (sizeheader >= 14 * sizeof(uint32_t)) return Serum_LoadFilev2(pfile, flags, uncompressedCROM, pathbuf, sizeheader);
 	mySerum.SerumVersion = g_serumData.SerumVersion = SERUM_V1;
-	my_fread(&g_serumData.fwidth, 4, 1, pfile);
-	my_fread(&g_serumData.fheight, 4, 1, pfile);
+	fread(&g_serumData.fwidth, 4, 1, pfile);
+	fread(&g_serumData.fheight, 4, 1, pfile);
 	// The serum file stored the number of frames as uint32_t, but in fact, the
 	// number of frames will never exceed the size of uint16_t (65535)
 	uint32_t nframes32;
-	my_fread(&nframes32, 4, 1, pfile);
+	fread(&nframes32, 4, 1, pfile);
 	g_serumData.nframes = (uint16_t)nframes32;
-	my_fread(&g_serumData.nocolors, 4, 1, pfile);
+	fread(&g_serumData.nocolors, 4, 1, pfile);
 	mySerum.nocolors = g_serumData.nocolors;
-	my_fread(&g_serumData.nccolors, 4, 1, pfile);
+	fread(&g_serumData.nccolors, 4, 1, pfile);
 	if ((g_serumData.fwidth == 0) || (g_serumData.fheight == 0) || (g_serumData.nframes == 0) || (g_serumData.nocolors == 0) || (g_serumData.nccolors == 0))
 	{
 		// incorrect file format
@@ -1001,11 +996,11 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 		enabled = false;
 		return NULL;
 	}
-	my_fread(&g_serumData.ncompmasks, 4, 1, pfile);
-	my_fread(&g_serumData.nmovmasks, 4, 1, pfile);
-	my_fread(&g_serumData.nsprites, 4, 1, pfile);
+	fread(&g_serumData.ncompmasks, 4, 1, pfile);
+	fread(&g_serumData.nmovmasks, 4, 1, pfile);
+	fread(&g_serumData.nsprites, 4, 1, pfile);
 	if (sizeheader >= 13 * sizeof(uint32_t))
-		my_fread(&g_serumData.nbackgrounds, 2, 1, pfile);
+		fread(&g_serumData.nbackgrounds, 2, 1, pfile);
 	else
 		g_serumData.nbackgrounds = 0;
 	// allocate memory for the serum format
@@ -1041,8 +1036,8 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 
 	for (int ti = 0; ti < (int)g_serumData.nsprites * MAX_SPRITE_SIZE * MAX_SPRITE_SIZE; ti++)
 	{
-		my_fread(&spritedescriptionsc[ti], 1, 1, pfile);
-		my_fread(&spritedescriptionso[ti], 1, 1, pfile);
+		fread(&spritedescriptionsc[ti], 1, 1, pfile);
+		fread(&spritedescriptionso[ti], 1, 1, pfile);
 	}
 	for (uint32_t i = 0; i < g_serumData.nsprites; i++)
 	{
@@ -1051,6 +1046,7 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename, const uint8_t fl
 	}
 	Free_element((void**)&spritedescriptionso);
 	Free_element((void**)&spritedescriptionsc);
+
 	g_serumData.activeframes.readFromCRomFile(1, g_serumData.nframes, pfile);
 	g_serumData.colorrotations.readFromCRomFile(3 * MAX_COLOR_ROTATIONS, g_serumData.nframes, pfile);
 	g_serumData.spritedetdwords.readFromCRomFile(MAX_SPRITE_DETECT_AREAS, g_serumData.nsprites, pfile);
