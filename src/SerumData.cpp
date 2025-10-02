@@ -1,6 +1,7 @@
 #include "SerumData.h"
 
 SerumData::SerumData() :
+    SerumVersion(0),
     hashcodes(0, true),
     shapecompmode(0),
     compmaskID(255),
