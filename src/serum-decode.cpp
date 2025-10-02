@@ -13,8 +13,6 @@
 #include <optional>
 
 #include "serum-version.h"
-#include "sparse-vector.h"
-#include "SceneGenerator.h"
 #include "SerumData.h"
 
 #if defined(__APPLE__)
@@ -54,7 +52,6 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 #pragma warning(disable : 4996)
 
 static SerumData g_serumData;
-SceneGenerator* sceneGenerator = new SceneGenerator();
 uint16_t sceneFrameCount = 0;
 uint16_t sceneCurrentFrame = 0;
 uint16_t sceneDurationPerFrame = 0;
@@ -195,7 +192,7 @@ void Serum_free(void)
 	Free_element((void**)&frameshape);
 	cromloaded = false;
 
-	sceneGenerator->Reset();
+	g_serumData.sceneGenerator->Reset();
 }
 
 SERUM_API const char* Serum_GetVersion() { return SERUM_VERSION; }
@@ -368,88 +365,7 @@ bool Serum_SaveConcentrate(const char *filename)
 
 	concentratePath += ".cROMc";
 
-	FILE *pfile = fopen(concentratePath.c_str(), "wb");
-	if (!pfile)
-		return false;
-
-	LZ4Stream stream(pfile, true);
-
-	// Write header
-	const char magicBytes[] = "CONC";
-	stream.write(magicBytes, 4);
-	uint16_t concentrateFileVersion = 1;
-	stream.write(&concentrateFileVersion, sizeof(uint16_t));
-	stream.write(&g_serumData.SerumVersion, sizeof(uint8_t));
-	stream.write(&g_serumData.fwidth, sizeof(uint32_t));
-	stream.write(&g_serumData.fheight, sizeof(uint32_t));
-	stream.write(&g_serumData.fwidthx, sizeof(uint32_t));
-	stream.write(&g_serumData.fheightx, sizeof(uint32_t));
-	stream.write(&g_serumData.nframes, sizeof(uint32_t));
-	stream.write(&g_serumData.nocolors, sizeof(uint32_t));
-	stream.write(&g_serumData.nccolors, sizeof(uint32_t));
-	stream.write(&g_serumData.ncompmasks, sizeof(uint32_t));
-	stream.write(&g_serumData.nsprites, sizeof(uint32_t));
-	stream.write(&g_serumData.nbackgrounds, sizeof(uint16_t));
-
-	// Write SparseVector data
-	g_serumData.hashcodes.saveToStream(stream);
-	g_serumData.shapecompmode.saveToStream(stream);
-	g_serumData.compmaskID.saveToStream(stream);
-	g_serumData.compmasks.saveToStream(stream);
-	g_serumData.cpal.saveToStream(stream);
-	g_serumData.isextraframe.saveToStream(stream);
-	g_serumData.cframes.saveToStream(stream);
-	g_serumData.cframesn.saveToStream(stream);
-	g_serumData.cframesnx.saveToStream(stream);
-	g_serumData.dynamasks.saveToStream(stream);
-	g_serumData.dynamasksx.saveToStream(stream);
-	g_serumData.dyna4cols.saveToStream(stream);
-	g_serumData.dyna4colsn.saveToStream(stream);
-	g_serumData.dyna4colsnx.saveToStream(stream);
-	g_serumData.framesprites.saveToStream(stream);
-	g_serumData.isextrasprite.saveToStream(stream);
-	g_serumData.spritemaskx.saveToStream(stream);
-	g_serumData.spritecolored.saveToStream(stream);
-	g_serumData.spritecoloredx.saveToStream(stream);
-	g_serumData.activeframes.saveToStream(stream);
-	g_serumData.colorrotations.saveToStream(stream);
-	g_serumData.colorrotationsn.saveToStream(stream);
-	g_serumData.colorrotationsnx.saveToStream(stream);
-	g_serumData.triggerIDs.saveToStream(stream);
-	g_serumData.framespriteBB.saveToStream(stream);
-	g_serumData.isextrabackground.saveToStream(stream);
-	g_serumData.backgroundframes.saveToStream(stream);
-	g_serumData.backgroundframesn.saveToStream(stream);
-	g_serumData.backgroundframesnx.saveToStream(stream);
-	g_serumData.backgroundIDs.saveToStream(stream);
-	g_serumData.backgroundBB.saveToStream(stream);
-	g_serumData.backgroundmask.saveToStream(stream);
-	g_serumData.backgroundmaskx.saveToStream(stream);
-	g_serumData.dynashadowsdiro.saveToStream(stream);
-	g_serumData.dynashadowscolo.saveToStream(stream);
-	g_serumData.dynashadowsdirx.saveToStream(stream);
-	g_serumData.dynashadowscolx.saveToStream(stream);
-	g_serumData.dynasprite4cols.saveToStream(stream);
-	g_serumData.dynasprite4colsx.saveToStream(stream);
-	g_serumData.dynaspritemasks.saveToStream(stream);
-	g_serumData.dynaspritemasksx.saveToStream(stream);
-
-	// Write raw arrays
-	if (g_serumData.nsprites > 0)
-	{
-		g_serumData.spritedetdwords.saveToStream(stream);
-		g_serumData.spritedetdwordpos.saveToStream(stream);
-		g_serumData.spritedetareas.saveToStream(stream);
-		g_serumData.spriteoriginal.saveToStream(stream);
-		g_serumData.sprshapemode.saveToStream(stream);
-		g_serumData.spritedescriptionso.saveToStream(stream);
-		g_serumData.spritedescriptionsc.saveToStream(stream);
-	}
-
-	sceneGenerator->saveToStream(stream);
-
-	fclose(pfile);
-	return true;
+	return g_serumData.SaveToFile(concentratePath.c_str());
 }
 
 Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t flags)
@@ -457,127 +373,13 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	if (!crc32_ready)
 		CRC32encode();
 
+	g_serumData.loadExtraResolution(isextrarequested);
+	if (!g_serumData.LoadFromFile(filename))
+		return NULL;
+
 	FILE *pfile = fopen(filename, "rb");
 	if (!pfile)
 		return NULL;
-
-	LZ4Stream stream(pfile, false);
-
-	// Read and verify header
-	char readMagic[5] = {0};
-	stream.read(readMagic, 4);
-	if (strncmp(readMagic, "CONC", 4) != 0)
-	{
-		fclose(pfile);
-		return NULL;
-	}
-
-	// Read header data
-	uint16_t concentrateFileVersion = 1;
-	stream.read(&concentrateFileVersion, sizeof(uint16_t));
-	stream.read(&g_serumData.SerumVersion, sizeof(uint8_t));
-	stream.read(&g_serumData.fwidth, sizeof(uint32_t));
-	stream.read(&g_serumData.fheight, sizeof(uint32_t));
-	stream.read(&g_serumData.fwidthx, sizeof(uint32_t));
-	stream.read(&g_serumData.fheightx, sizeof(uint32_t));
-	stream.read(&g_serumData.nframes, sizeof(uint32_t));
-	stream.read(&g_serumData.nocolors, sizeof(uint32_t));
-	stream.read(&g_serumData.nccolors, sizeof(uint32_t));
-	stream.read(&g_serumData.ncompmasks, sizeof(uint32_t));
-	stream.read(&g_serumData.nsprites, sizeof(uint32_t));
-	stream.read(&g_serumData.nbackgrounds, sizeof(uint16_t));
-
-	// Read SparseVector data
-	g_serumData.hashcodes.loadFromStream(stream);
-	g_serumData.shapecompmode.loadFromStream(stream);
-	g_serumData.compmaskID.loadFromStream(stream);
-	g_serumData.compmasks.loadFromStream(stream);
-	g_serumData.cpal.loadFromStream(stream);
-	g_serumData.isextraframe.loadFromStream(stream);
-	if (isextrarequested) {
-		for (uint32_t ti = 0; ti < g_serumData.nframes; ti++)
-		{
-			if (g_serumData.isextraframe[ti][0] > 0)
-			{
-				mySerum.flags |= FLAG_RETURNED_EXTRA_AVAILABLE;
-				break;
-			}
-		}
-	}
-	else g_serumData.isextraframe.clearIndex();
-	g_serumData.cframes.loadFromStream(stream);
-	g_serumData.cframesn.loadFromStream(stream);
-	g_serumData.cframesnx.loadFromStream(stream);
-	g_serumData.cframesnx.setParent(&g_serumData.isextraframe);
-	g_serumData.dynamasks.loadFromStream(stream);
-	g_serumData.dynamasksx.loadFromStream(stream);
-	g_serumData.dynamasksx.setParent(&g_serumData.isextraframe);
-	g_serumData.dyna4cols.loadFromStream(stream);
-	g_serumData.dyna4colsn.loadFromStream(stream);
-	g_serumData.dyna4colsnx.loadFromStream(stream);
-	g_serumData.dyna4colsnx.setParent(&g_serumData.isextraframe);
-	g_serumData.framesprites.loadFromStream(stream);
-	g_serumData.isextrasprite.loadFromStream(stream);
-	if (!isextrarequested) g_serumData.isextrasprite.clearIndex();
-	g_serumData.spritemaskx.loadFromStream(stream);
-	g_serumData.spritemaskx.setParent(&g_serumData.isextrasprite);
-	g_serumData.spritecolored.loadFromStream(stream);
-	g_serumData.spritecoloredx.loadFromStream(stream);
-	g_serumData.spritecoloredx.setParent(&g_serumData.isextrasprite);
-	g_serumData.activeframes.loadFromStream(stream);
-	g_serumData.colorrotations.loadFromStream(stream);
-	g_serumData.colorrotationsn.loadFromStream(stream);
-	g_serumData.colorrotationsnx.loadFromStream(stream);
-	g_serumData.colorrotationsnx.setParent(&g_serumData.isextraframe);
-	g_serumData.triggerIDs.loadFromStream(stream);
-	g_serumData.framespriteBB.loadFromStream(stream);
-	g_serumData.framespriteBB.setParent(&g_serumData.framesprites);
-	g_serumData.isextrabackground.loadFromStream(stream);
-	if (!isextrarequested) g_serumData.isextrabackground.clearIndex();
-	g_serumData.backgroundframes.loadFromStream(stream);
-	g_serumData.backgroundframesn.loadFromStream(stream);
-	g_serumData.backgroundframesnx.loadFromStream(stream);
-	g_serumData.backgroundframesnx.setParent(&g_serumData.isextrabackground);
-	g_serumData.backgroundIDs.loadFromStream(stream);
-	g_serumData.backgroundBB.loadFromStream(stream);
-	g_serumData.backgroundmask.loadFromStream(stream);
-	g_serumData.backgroundmask.setParent(&g_serumData.backgroundIDs);
-	g_serumData.backgroundmaskx.loadFromStream(stream);
-	g_serumData.backgroundmaskx.setParent(&g_serumData.backgroundIDs);
-	g_serumData.dynashadowsdiro.loadFromStream(stream);
-	g_serumData.dynashadowscolo.loadFromStream(stream);
-	g_serumData.dynashadowsdirx.loadFromStream(stream);
-	g_serumData.dynashadowsdirx.setParent(&g_serumData.isextraframe);
-	g_serumData.dynashadowscolx.loadFromStream(stream);
-	g_serumData.dynashadowscolx.setParent(&g_serumData.isextraframe);
-	g_serumData.dynasprite4cols.loadFromStream(stream);
-	g_serumData.dynasprite4colsx.loadFromStream(stream);
-	g_serumData.dynasprite4colsx.setParent(&g_serumData.isextraframe);
-	g_serumData.dynaspritemasks.loadFromStream(stream);
-	g_serumData.dynaspritemasksx.loadFromStream(stream);
-	g_serumData.dynaspritemasksx.setParent(&g_serumData.isextraframe);
-
-	// Read raw arrays
-	if (g_serumData.nsprites > 0)
-	{
-		g_serumData.spritedetdwords.loadFromStream(stream);
-		g_serumData.spritedetdwordpos.loadFromStream(stream);
-		g_serumData.spritedetareas.loadFromStream(stream);
-		if (SERUM_V2 == g_serumData.SerumVersion)
-		{
-			g_serumData.spriteoriginal.loadFromStream(stream);
-			g_serumData.sprshapemode.loadFromStream(stream);
-		}
-		else if (SERUM_V1 == g_serumData.SerumVersion)
-		{
-			g_serumData.spritedescriptionso.loadFromStream(stream);
-			g_serumData.spritedescriptionsc.loadFromStream(stream);
-		}
-	}
-
-	sceneGenerator->loadFromStream(stream);
-
-	fclose(pfile);
 
 	// Update mySerum structure
 	mySerum.SerumVersion = g_serumData.SerumVersion;
@@ -635,6 +437,17 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 			mySerum.rotationsinframe64 = (uint16_t *)malloc(2 * 64 * g_serumData.fwidthx * sizeof(uint16_t));
 			if (flags & FLAG_REQUEST_FILL_MODIFIED_ELEMENTS)
 				mySerum.modifiedelements64 = (uint8_t *)malloc(64 * g_serumData.fwidthx);
+		}
+
+		if (isextrarequested) {
+			for (uint32_t ti = 0; ti < g_serumData.nframes; ti++)
+			{
+				if (g_serumData.isextraframe[ti][0] > 0)
+				{
+					mySerum.flags |= FLAG_RETURNED_EXTRA_AVAILABLE;
+					break;
+				}
+			}
 		}
 
 		frameshape = (uint8_t *)malloc(g_serumData.fwidth * g_serumData.fheight);
@@ -1148,17 +961,17 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 
 	Serum_Frame_Struc* result = NULL;
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
-/*
+
 	if (pFoundFile)
 	{
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
-		if (result && csvFoundFile && sceneGenerator->parseCSV(csvFoundFile->c_str()))
+		if (result && csvFoundFile && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
 		{
 			// Update the concentrate file with new PUP data
 			Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}
-*/
+
 	if (!result)
 	{
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // by default, we request both frame types
@@ -1171,15 +984,13 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 			return NULL;
 		}
 		result = Serum_LoadFilev1(pFoundFile->c_str(), flags);
-/*
 		if (result)
 		{
-			if (csvFoundFile) sceneGenerator->parseCSV(csvFoundFile->c_str());
+			if (csvFoundFile) g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str());
 			Serum_SaveConcentrate(pFoundFile->c_str());
 		}
-*/
 	}
-	if (result && sceneGenerator->isActive()) sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);
+	if (result && g_serumData.sceneGenerator->isActive()) g_serumData.sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);
 
 	return result;
 }
@@ -2022,7 +1833,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 	mySerum.triggerID = 0xffffffff;
 	mySerum.frameID = IDENTIFY_NO_FRAME;
 
-	if (sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
+	if (g_serumData.sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
 	{
 		// Scene is active and not interruptable
 		return IDENTIFY_NO_FRAME;
@@ -2060,9 +1871,9 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
 
-            if (sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
+            if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
             {
-                if (sceneGenerator->getSceneInfo(lasttriggerID, sceneFrameCount, sceneDurationPerFrame,
+                if (g_serumData.sceneGenerator->getSceneInfo(lasttriggerID, sceneFrameCount, sceneDurationPerFrame,
                                                sceneInterruptable, sceneStartImmediately, sceneRepeatCount,
                                                sceneEndFrame))
                 {
@@ -2072,7 +1883,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 					sceneCurrentFrame = 0;
 					if (sceneStartImmediately)
 					{
-						sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame++, frame);
+						g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame++, frame);
 					}
 					else
 					{
@@ -2163,10 +1974,10 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 				}
 			}
 
-			if (0 == mySerum.rotationtimer && sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame >= sceneFrameCount &&
-				 sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
+			if (0 == mySerum.rotationtimer && g_serumData.sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame >= sceneFrameCount &&
+				 g_serumData.sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
 			{
-				mySerum.rotationtimer = sceneGenerator->getAutoStartTimer();
+				mySerum.rotationtimer = g_serumData.sceneGenerator->getAutoStartTimer();
 			}
 
 			return (uint32_t)mySerum.rotationtimer;  // new frame, return true
@@ -2262,9 +2073,9 @@ uint32_t Calc_Next_Rotationv2(uint32_t now)
 
 uint32_t Serum_ApplyRotationsv2(void)
 {
-	if (sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
+	if (g_serumData.sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
 	{
-		if (sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame))
+		if (g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame))
 		{
 			Serum_ColorizeWithMetadatav2(sceneFrame, true);
 			sceneCurrentFrame++;
@@ -2407,41 +2218,41 @@ SERUM_API void Serum_EnableColorization()
 }
 
 SERUM_API bool Serum_Scene_ParseCSV(const char* const csv_filename) {
-    if (!sceneGenerator) return false;
-    return sceneGenerator->parseCSV(csv_filename);
+    if (!g_serumData.sceneGenerator) return false;
+    return g_serumData.sceneGenerator->parseCSV(csv_filename);
 }
 
 SERUM_API bool Serum_Scene_GenerateDump(const char* const dump_filename, int id) {
-    if (!sceneGenerator) return false;
-    return sceneGenerator->generateDump(dump_filename, id);
+    if (!g_serumData.sceneGenerator) return false;
+    return g_serumData.sceneGenerator->generateDump(dump_filename, id);
 }
 
 SERUM_API bool Serum_Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint16_t* durationPerFrame, bool* interruptable,
                                   bool* startImmediately, uint8_t* repeat, uint8_t* endFrame) {
-    if (!sceneGenerator) return false;
-    return sceneGenerator->getSceneInfo(sceneId, *frameCount, *durationPerFrame, *interruptable,
+    if (!g_serumData.sceneGenerator) return false;
+    return g_serumData.sceneGenerator->getSceneInfo(sceneId, *frameCount, *durationPerFrame, *interruptable,
                                       *startImmediately, *repeat, *endFrame);
 }
 
 SERUM_API bool Serum_Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group) {
-    if (!sceneGenerator) return false;
-    return sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group);
+    if (!g_serumData.sceneGenerator) return false;
+    return g_serumData.sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group);
 }
 
 SERUM_API void Serum_Scene_SetDepth(uint8_t depth) {
-    if (sceneGenerator) sceneGenerator->setDepth(depth);
+    if (g_serumData.sceneGenerator) g_serumData.sceneGenerator->setDepth(depth);
 }
 
 SERUM_API int Serum_Scene_GetDepth(void) {
-    if (!sceneGenerator) return 0;
-    return sceneGenerator->getDepth();
+    if (!g_serumData.sceneGenerator) return 0;
+    return g_serumData.sceneGenerator->getDepth();
 }
 
 SERUM_API bool Serum_Scene_IsActive(void) {
-    if (!sceneGenerator) return false;
-    return sceneGenerator->isActive();
+    if (!g_serumData.sceneGenerator) return false;
+    return g_serumData.sceneGenerator->isActive();
 }
 
 SERUM_API void Serum_Scene_Reset(void) {
-    if (sceneGenerator) sceneGenerator->Reset();
+    if (g_serumData.sceneGenerator) g_serumData.sceneGenerator->Reset();
 }

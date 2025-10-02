@@ -1,11 +1,15 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
 #include <vector>
 #include <unordered_map>
-#include <stdexcept>
-#include <algorithm>
+#include <cstdint>
+#include <cereal/access.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
+
+//#include <cstdio>
+//#include <stdexcept>
+//#include <algorithm>
 
 #include "LZ4Stream.h"
 template <typename T>
@@ -321,5 +325,21 @@ public:
 		// Clear cache
 		lastAccessedId = UINT32_MAX;
 		lastDecompressed.clear();
+	}
+
+	friend class cereal::access;
+
+	template<class Archive>
+	void serialize(Archive & ar)
+	{
+		ar(index,
+		   data,
+		   noData,
+		   elementSize,
+		   decompBuffer,
+		   useIndex,
+		   useCompression);
+		// lastAccessedId und lastDecompressed are runtime caches
+		// and must not be serilized.
 	}
 };

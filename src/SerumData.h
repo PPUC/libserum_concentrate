@@ -1,19 +1,26 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <sstream>
+#include <vector>
 #include "sparse-vector.h"
 #include "SceneGenerator.h"
-//#include <cereal/access.hpp>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
 
-class SerumData {
+class SerumData
+{
 public:
     SerumData();
     ~SerumData();
 
     void Clear();
-
-    // Make private members accessible to cereal
-    //friend class cereal::access;
+    bool SaveToFile(const char *filename);
+    bool LoadFromFile(const char *filename);
+    void loadExtraResolution(bool extra) { m_loadExtra = extra; }
 
     // Header data
     char rname[64];
@@ -80,9 +87,80 @@ public:
     SparseVector<uint8_t> dynaspritemasksx;
     SparseVector<uint8_t> sprshapemode;
 
-//private:
-//    template<class Archive>
-//    void serialize(Archive & ar) {
-//        // Add serialization code here
-//    }
+    SceneGenerator *sceneGenerator;
+
+private:
+    bool m_loadExtra = true;
+
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(rname, SerumVersion, concentrateFileVersion,
+           fwidth, fheight, fwidthx, fheightx,
+           nframes, nocolors, nccolors,
+           ncompmasks, nmovmasks, nsprites,
+           nbackgrounds, is256x64,
+           hashcodes, shapecompmode, compmaskID,
+           movrctID, compmasks, movrcts,
+           cpal, isextraframe, cframes,
+           cframesn, cframesnx, dynamasks,
+           dynamasksx, dyna4cols, dyna4colsn,
+           dyna4colsnx, framesprites,
+           spritedescriptionso, spritedescriptionsc,
+           isextrasprite, spriteoriginal,
+           spritemaskx, spritecolored,
+           spritecoloredx, activeframes,
+           colorrotations, colorrotationsn,
+           colorrotationsnx, spritedetdwords,
+           spritedetdwordpos, spritedetareas,
+           triggerIDs, framespriteBB,
+           isextrabackground, backgroundframes,
+           backgroundframesn, backgroundframesnx,
+           backgroundIDs, backgroundBB,
+           backgroundmask, backgroundmaskx,
+           dynashadowsdiro, dynashadowscolo,
+           dynashadowsdirx, dynashadowscolx,
+           dynasprite4cols, dynasprite4colsx,
+           dynaspritemasks, dynaspritemasksx,
+           sprshapemode);
+
+        if constexpr (Archive::is_saving::value)
+        {
+            ar(sceneGenerator ? sceneGenerator->getSceneData() : std::vector<SceneData>{});
+        }
+        else
+        {
+            if (!m_loadExtra)
+            {
+                isextraframe.clearIndex();
+                isextrabackground.clearIndex();
+                isextrasprite.clearIndex();
+            }
+
+            cframesnx.setParent(&isextraframe);
+            dynamasksx.setParent(&isextraframe);
+            dyna4colsnx.setParent(&isextraframe);
+            spritemaskx.setParent(&isextrasprite);
+            spritecoloredx.setParent(&isextrasprite);
+            colorrotationsnx.setParent(&isextraframe);
+            framespriteBB.setParent(&framesprites);
+            backgroundframesnx.setParent(&isextrabackground);
+            backgroundmask.setParent(&backgroundIDs);
+            backgroundmaskx.setParent(&backgroundIDs);
+            dynashadowsdirx.setParent(&isextraframe);
+            dynashadowscolx.setParent(&isextraframe);
+            dynasprite4colsx.setParent(&isextraframe);
+            dynaspritemasksx.setParent(&isextraframe);
+            backgroundBB.setParent(&backgroundIDs);
+
+            std::vector<SceneData> loadedScenes;
+            ar(loadedScenes);
+            if (sceneGenerator)
+            {
+                sceneGenerator->setSceneData(std::move(loadedScenes));
+            }
+        }
+    }
 };
