@@ -1061,23 +1061,24 @@ uint32_t Identify_Frame(uint8_t* frame)
 	return IDENTIFY_NO_FRAME;  // we found no corresponding frame
 }
 
-void GetSpriteSize(uint8_t nospr, int* pswid, int* pshei, SparseVector<uint8_t> pspro, int sswid, int sshei)
+void GetSpriteSize(uint8_t nospr, int* pswid, int* pshei, uint8_t* spriteData, int sswid, int sshei)
 {
-	*pswid = *pshei = 0;
-	if (nospr >= g_serumData.nsprites) return;
-	for (int tj = 0; tj < sshei; tj++)
-	{
-		for (int ti = 0; ti < sswid; ti++)
-		{
-			if (pspro[nospr][tj * sswid + ti] < 255)
-			{
-				if (tj > *pshei) *pshei = tj;
-				if (ti > *pswid) *pswid = ti;
-			}
-		}
-	}
-	(*pshei)++;
-	(*pswid)++;
+    *pswid = *pshei = 0;
+    if (nospr >= g_serumData.nsprites) return;
+    if (!spriteData) return;
+    for (int tj = 0; tj < sshei; tj++)
+    {
+        for (int ti = 0; ti < sswid; ti++)
+        {
+            if (spriteData[tj * sswid + ti] < 255)
+            {
+                if (tj > *pshei) *pshei = tj;
+                if (ti > *pswid) *pswid = ti;
+            }
+        }
+    }
+    (*pshei)++;
+    (*pswid)++;
 }
 
 bool Check_Spritesv1(uint8_t* Frame, uint32_t quelleframe, uint8_t* pquelsprites, uint8_t* nspr, uint16_t* pfrx, uint16_t* pfry, uint16_t* pspx, uint16_t* pspy, uint16_t* pwid, uint16_t* phei)
@@ -1089,7 +1090,7 @@ bool Check_Spritesv1(uint8_t* Frame, uint32_t quelleframe, uint8_t* pquelsprites
 	{
 		uint8_t qspr = g_serumData.framesprites[quelleframe][ti];
 		int spw, sph;
-		GetSpriteSize(qspr, &spw, &sph, g_serumData.spritedescriptionso, MAX_SPRITE_SIZE, MAX_SPRITE_SIZE);
+		GetSpriteSize(qspr, &spw, &sph, g_serumData.spritedescriptionso[qspr], MAX_SPRITE_SIZE, MAX_SPRITE_SIZE);
 		short minxBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4]);
 		short minyBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4 + 1]);
 		short maxxBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4 + 2]);
@@ -1220,7 +1221,7 @@ bool Check_Spritesv2(uint8_t* recframe, uint32_t quelleframe, uint8_t* pquelspri
 			Frame = frameshape;
 		}
 		int spw, sph;
-		GetSpriteSize(qspr, &spw, &sph, g_serumData.spriteoriginal, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT);
+		GetSpriteSize(qspr, &spw, &sph, g_serumData.spriteoriginal[qspr], MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT);
 		short minxBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4]);
 		short minyBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4 + 1]);
 		short maxxBB = (short)(g_serumData.framespriteBB[quelleframe][ti * 4 + 2]);
