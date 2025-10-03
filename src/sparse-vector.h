@@ -27,7 +27,7 @@ protected:
 
 public:
 	SparseVector(T noDataSignature, bool index, bool compress = false)
-		: useIndex(index), useCompression(compress), lastAccessedId(UINT32_MAX)
+		: useIndex(index), useCompression(compress)
 	{
 		noData.resize(1, noDataSignature);
 	}
@@ -231,8 +231,8 @@ public:
 
 	friend class cereal::access;
 
-	template<class Archive>
-	void serialize(Archive & ar)
+	template <class Archive>
+	void serialize(Archive &ar)
 	{
 		ar(index,
 		   data,
@@ -241,7 +241,12 @@ public:
 		   decompBuffer,
 		   useIndex,
 		   useCompression);
-		// lastAccessedId und lastDecompressed are runtime caches
-		// and must not be serilized.
+
+		if constexpr (Archive::is_loading::value)
+		{
+			// Clear cache
+			lastAccessedId = UINT32_MAX;
+			lastDecompressed.clear();
+		}
 	}
 };

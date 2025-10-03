@@ -271,7 +271,7 @@ uint32_t crc32_fast_mask_shape(uint8_t* source, uint8_t* mask, uint32_t n)
 
 uint32_t calc_crc32(uint8_t* source, uint8_t mask, uint32_t n, uint8_t Shape)
 {
-	const uint32_t pixels = g_serumData.is256x64 ? 256 * 64 : g_serumData.fwidth * g_serumData.fheight;
+	const uint32_t pixels = g_serumData.is256x64 ? (256 * 64) : (g_serumData.fwidth * g_serumData.fheight);
 	if (mask < 255)
 	{
 		uint8_t* pmask = g_serumData.compmasks[mask];
@@ -561,7 +561,7 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	{
 		int is256x64;
 		fread(&is256x64, sizeof(int), 1, pfile);
-		g_serumData.is256x64 = is256x64 != 0;
+		g_serumData.is256x64 = (is256x64 != 0);
 	}
 
 	frameshape = (uint8_t*)malloc(g_serumData.fwidth * g_serumData.fheight);
@@ -602,7 +602,7 @@ Serum_Frame_Struc* Serum_LoadFilev2(FILE* pfile, const uint8_t flags, bool uncom
 	g_serumData.hashcodes.readFromCRomFile(1, g_serumData.nframes, pfile);
 	g_serumData.shapecompmode.readFromCRomFile(1, g_serumData.nframes, pfile);
 	g_serumData.compmaskID.readFromCRomFile(1, g_serumData.nframes, pfile);
-	g_serumData.compmasks.readFromCRomFile(g_serumData.is256x64 ? 256 * 64 : g_serumData.fwidth * g_serumData.fheight, g_serumData.ncompmasks, pfile);
+	g_serumData.compmasks.readFromCRomFile(g_serumData.is256x64 ? (256 * 64) : (g_serumData.fwidth * g_serumData.fheight), g_serumData.ncompmasks, pfile);
 	g_serumData.isextraframe.readFromCRomFile(1, g_serumData.nframes, pfile);
 	if (isextrarequested) {
 		for (uint32_t ti = 0; ti < g_serumData.nframes; ti++)
@@ -1008,7 +1008,7 @@ uint32_t Identify_Frame(uint8_t* frame)
 	if (!cromloaded) return IDENTIFY_NO_FRAME;
 	memset(framechecked, false, g_serumData.nframes);
 	uint16_t tj = lastfound;  // we start from the frame we last found
-	const uint32_t pixels = g_serumData.is256x64 ? 256 * 64 : g_serumData.fwidth * g_serumData.fheight;
+	const uint32_t pixels = g_serumData.is256x64 ? (256 * 64) : (g_serumData.fwidth * g_serumData.fheight);
 	do
 	{
 		if (!framechecked[tj])
