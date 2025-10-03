@@ -160,8 +160,10 @@ bool SerumData::SaveToFile(const char *filename)
     }
 }
 
-bool SerumData::LoadFromFile(const char *filename)
+bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
 {
+    m_loadFlags = flags;
+
     try
     {
         FILE *fp = fopen(filename, "rb");

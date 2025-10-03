@@ -7,10 +7,6 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 
-//#include <cstdio>
-//#include <stdexcept>
-//#include <algorithm>
-
 #include "LZ4Stream.h"
 template <typename T>
 class SparseVector
@@ -202,100 +198,6 @@ public:
 		index.clear();
 		data.clear();
 		noData.resize(1);
-		lastAccessedId = UINT32_MAX;
-		lastDecompressed.clear();
-	}
-
-	void saveToStream(LZ4Stream &stream) const
-	{
-		// Flags
-		uint8_t flags = (useIndex ? 1 : 0) | (useCompression ? 2 : 0);
-		stream.write(&flags, sizeof(flags));
-
-		// Element size and default value
-		stream.write(&elementSize, sizeof(elementSize));
-		size_t noDataSize = noData.size();
-		stream.write(&noDataSize, sizeof(noDataSize));
-		stream.write(noData.data(), sizeof(T) * noDataSize);
-
-		if (useIndex)
-		{
-			size_t indexSize = index.size();
-			stream.write(&indexSize, sizeof(indexSize));
-			for (const auto &vec : index)
-			{
-				size_t vecSize = vec.size();
-				stream.write(&vecSize, sizeof(vecSize));
-				if (vecSize > 0)
-				{
-					stream.write(vec.data(), sizeof(T) * vecSize);
-				}
-			}
-		}
-		else
-		{
-			uint32_t count = data.size();
-			stream.write(&count, sizeof(count));
-			for (const auto &entry : data)
-			{
-				stream.write(&entry.first, sizeof(entry.first));
-				size_t dataSize = entry.second.size();
-				stream.write(&dataSize, sizeof(dataSize));
-				stream.write(entry.second.data(), dataSize);
-			}
-		}
-	}
-
-	void loadFromStream(LZ4Stream &stream)
-	{
-		clear();
-
-		// Flags
-		uint8_t flags;
-		stream.read(&flags, sizeof(flags));
-		useIndex = (flags & 1) != 0;
-		useCompression = (flags & 2) != 0;
-
-		// Element size and default value
-		stream.read(&elementSize, sizeof(elementSize));
-		size_t noDataSize;
-		stream.read(&noDataSize, sizeof(noDataSize));
-		noData.resize(noDataSize);
-		stream.read(noData.data(), sizeof(T) * noDataSize);
-
-		if (useIndex)
-		{
-			size_t indexSize;
-			stream.read(&indexSize, sizeof(indexSize));
-			index.resize(indexSize);
-			for (size_t i = 0; i < indexSize; i++)
-			{
-				size_t vecSize;
-				stream.read(&vecSize, sizeof(vecSize));
-				if (vecSize > 0)
-				{
-					index[i].resize(vecSize);
-					stream.read(index[i].data(), sizeof(T) * vecSize);
-				}
-			}
-		}
-		else
-		{
-			uint32_t count;
-			stream.read(&count, sizeof(count));
-			for (uint32_t i = 0; i < count; i++)
-			{
-				uint32_t key;
-				stream.read(&key, sizeof(key));
-				size_t dataSize;
-				stream.read(&dataSize, sizeof(dataSize));
-
-				std::vector<uint8_t> dataBuf(dataSize);
-				stream.read(dataBuf.data(), dataSize);
-				data[key] = std::move(dataBuf);
-			}
-		}
-
 		lastAccessedId = UINT32_MAX;
 		lastDecompressed.clear();
 	}

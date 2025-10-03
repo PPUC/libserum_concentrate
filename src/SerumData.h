@@ -19,8 +19,7 @@ public:
 
     void Clear();
     bool SaveToFile(const char *filename);
-    bool LoadFromFile(const char *filename);
-    void loadExtraResolution(bool extra) { m_loadExtra = extra; }
+    bool LoadFromFile(const char *filename, const uint8_t flags);
 
     // Header data
     char rname[64];
@@ -90,7 +89,7 @@ public:
     SceneGenerator *sceneGenerator;
 
 private:
-    bool m_loadExtra = true;
+    uint8_t m_loadFlags = 0;
 
     friend class cereal::access;
 
@@ -132,7 +131,7 @@ private:
         }
         else
         {
-            if (!m_loadExtra)
+            if (SERUM_V2 == SerumVersion && ((fheight == 32 && !(m_loadFlags & FLAG_REQUEST_64P_FRAMES)) || (fheight == 64 && !(m_loadFlags & FLAG_REQUEST_32P_FRAMES))))
             {
                 isextraframe.clearIndex();
                 isextrabackground.clearIndex();

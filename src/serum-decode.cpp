@@ -373,8 +373,7 @@ Serum_Frame_Struc *Serum_LoadConcentrate(const char *filename, const uint8_t fla
 	if (!crc32_ready)
 		CRC32encode();
 
-	g_serumData.loadExtraResolution(isextrarequested);
-	if (!g_serumData.LoadFromFile(filename))
+	if (!g_serumData.LoadFromFile(filename, flags))
 		return NULL;
 
 	FILE *pfile = fopen(filename, "rb");
