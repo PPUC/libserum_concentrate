@@ -10,6 +10,7 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
+#include "serum.h"
 
 class SerumData
 {
