@@ -965,7 +965,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	if (pFoundFile)
 	{
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
-		if (result && csvFoundFile && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
+		if (result && csvFoundFile && g_serumData.SerumVersion == SERUM_V2 && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
 		{
 			// Update the concentrate file with new PUP data
 			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
@@ -986,7 +986,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		result = Serum_LoadFilev1(pFoundFile->c_str(), flags);
 		if (result)
 		{
-			if (csvFoundFile) g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str());
+			if (csvFoundFile && g_serumData.SerumVersion == SERUM_V2) g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str());
 			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}

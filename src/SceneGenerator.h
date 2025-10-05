@@ -57,8 +57,6 @@ public:
   int getDepth() const { return m_depth; }
   bool isActive() const { return m_active; }
   uint32_t getAutoStartTimer() const { return 1000 * m_autoStartTimer; }
-  void saveToStream(LZ4Stream &stream) const;
-  void loadFromStream(LZ4Stream &stream);
   void Reset()
   {
     m_sceneData.clear();
