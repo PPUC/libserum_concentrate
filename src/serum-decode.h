@@ -27,6 +27,8 @@ SERUM_API void Serum_SetMaximumUnknownFramesToSkip(uint8_t maximum);
 
 SERUM_API void Serum_SetStandardPalette(const uint8_t* palette, const int bitDepth);
 
+SERUM_API void Serum_SetGenerateCRomC(bool generate);
+
 /** @brief Release the content and memory of the loaded Serum file.
 */
 SERUM_API void Serum_Dispose(void);

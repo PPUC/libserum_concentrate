@@ -95,6 +95,7 @@ const uint16_t greyscale_16[16] = {
 
 // variables
 bool cromloaded = false;  // is there a crom loaded?
+bool generateCRomC = true;
 uint32_t lastfound = 0;     // last frame ID identified
 uint32_t lastframe_full_crc = 0;
 uint32_t lastframe_found = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
@@ -967,7 +968,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		if (result && csvFoundFile && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
 		{
 			// Update the concentrate file with new PUP data
-			Serum_SaveConcentrate(pFoundFile->c_str());
+			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}
 
@@ -986,7 +987,7 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 		if (result)
 		{
 			if (csvFoundFile) g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str());
-			Serum_SaveConcentrate(pFoundFile->c_str());
+			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
 		}
 	}
 	if (result && g_serumData.sceneGenerator->isActive()) g_serumData.sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);
@@ -1718,6 +1719,11 @@ SERUM_API void Serum_SetIgnoreUnknownFramesTimeout(uint16_t milliseconds)
 SERUM_API void Serum_SetMaximumUnknownFramesToSkip(uint8_t maximum)
 {
 	maxFramesToSkip = maximum;
+}
+
+SERUM_API void Serum_SetGenerateCRomC(bool generate)
+{
+	generateCRomC = generate;
 }
 
 SERUM_API void Serum_SetStandardPalette(const uint8_t* palette, const int bitDepth)

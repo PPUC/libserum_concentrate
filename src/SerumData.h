@@ -160,6 +160,7 @@ private:
             if (sceneGenerator)
             {
                 sceneGenerator->setSceneData(std::move(loadedScenes));
+                sceneGenerator->setDepth(nocolors == 16 ? 4 : 2);
             }
         }
     }
