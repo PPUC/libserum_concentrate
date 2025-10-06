@@ -1865,7 +1865,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			framesSkippedCounter = 0;
 		}
 
-		if (frameID == IDENTIFY_SAME_FRAME) return IDENTIFY_NO_FRAME;
+		if (frameID == IDENTIFY_SAME_FRAME) return IDENTIFY_SAME_FRAME;
 
 		mySerum.frameID = frameID;
 		if (!sceneFrameRequested)
