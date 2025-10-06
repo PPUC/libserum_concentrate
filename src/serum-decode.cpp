@@ -2064,11 +2064,11 @@ uint32_t Calc_Next_Rotationv2(uint32_t now)
 	uint32_t nextrot = 0xffffffff;
 	for (int ti = 0; ti < MAX_COLOR_ROTATIONN; ti++)
 	{
-		if (mySerum.frame32 && mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION] > 0)
+		if (mySerum.frame32 && mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION] > 0 && mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION + 1] > 0)
 		{
 			if (colorrotnexttime32[ti] < nextrot) nextrot = colorrotnexttime32[ti];
 		}
-		if (mySerum.frame64 && mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION] > 0)
+		if (mySerum.frame64 && mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION] > 0 && mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION + 1] > 0)
 		{
 			if (colorrotnexttime64[ti] < nextrot) nextrot = colorrotnexttime64[ti];
 		}
@@ -2079,6 +2079,10 @@ uint32_t Calc_Next_Rotationv2(uint32_t now)
 
 uint32_t Serum_ApplyRotationsv2(void)
 {
+	// rotation[0] = number of colors in rotation
+	// rotation[1] = delay in ms between each color change
+	// rotation[2..n] = color indexes
+
 	if (g_serumData.sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
 	{
 		if (g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame))
@@ -2146,7 +2150,7 @@ uint32_t Serum_ApplyRotationsv2(void)
 		if (mySerum.modifiedelements32) memset(mySerum.modifiedelements32, 0, sizeframe);
 		for (int ti = 0; ti < MAX_COLOR_ROTATIONN; ti++)
 		{
-			if (mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION] == 0) continue;
+			if (mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION] == 0 || mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION + 1] == 0) continue;
 			uint32_t elapsed = now - colorshiftinittime32[ti];
 			if (elapsed >= (uint32_t)(mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION + 1]))
 			{
@@ -2173,7 +2177,7 @@ uint32_t Serum_ApplyRotationsv2(void)
 		if (mySerum.modifiedelements64) memset(mySerum.modifiedelements64, 0, sizeframe);
 		for (int ti = 0; ti < MAX_COLOR_ROTATIONN; ti++)
 		{
-			if (mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION] == 0) continue;
+			if (mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION] == 0 || mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION + 1] == 0) continue;
 			uint32_t elapsed = now - colorshiftinittime64[ti];
 			if (elapsed >= (uint32_t)(mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION + 1]))
 			{
@@ -2194,10 +2198,11 @@ uint32_t Serum_ApplyRotationsv2(void)
 			}
 		}
 	}
-	mySerum.rotationtimer = (uint16_t)Calc_Next_Rotationv2(now); // can't be more than 65s, so val is contained in the lower word of val
-	return ((uint32_t)mySerum.rotationtimer | isrotation); // returns the time in ms untill the next rotation in the lowest word
+	mySerum.rotationtimer = Calc_Next_Rotationv2(now) & 0xffff; // can't be more than 2048ms, so val is contained in the lower word of val
+	if (mySerum.rotationtimer == 0 || mySerum.rotationtimer > 2048) mySerum.rotationtimer = 10; // use 10ms as minimum delay
 	// if there was a rotation in the 32P frame, the first bit of the high word is set (0x10000)
 	// and if there was a rotation in the 64P frame, the second bit of the high word is set (0x20000)
+	return mySerum.rotationtimer | isrotation; // returns the time in ms until the next rotation in the lowest word
 }
 
 SERUM_API uint32_t Serum_Rotate(void)
