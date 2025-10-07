@@ -1846,8 +1846,8 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 
 	// Let's first identify the incoming frame among the ones we have in the crom
 	uint32_t frameID = Identify_Frame(frame);
-
 	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+	bool rotationIsScene = false;
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
@@ -1892,7 +1892,8 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 						// Overwrite the current frame with the first scene frame, ignore the result
 						g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame++, frame);
 					}
-					mySerum.rotationtimer = sceneDurationPerFrame | FLAG_RETURNED_V2_SCENE;
+					mySerum.rotationtimer = sceneDurationPerFrame;
+					rotationIsScene = true;
                 }
             }
 		}
@@ -1982,9 +1983,10 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 				 g_serumData.sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
 			{
 				mySerum.rotationtimer = g_serumData.sceneGenerator->getAutoStartTimer();
+				rotationIsScene = true;
 			}
 
-			return (uint32_t)mySerum.rotationtimer;  // new frame, return true
+			return (uint32_t)mySerum.rotationtimer | (rotationIsScene ? FLAG_RETURNED_V2_SCENE : 0);
 		}
 	}
 
@@ -1999,7 +2001,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			colorrotnexttime64[ti] = 0;
 		}
 		mySerum.rotationtimer = 0;
-		return 0;  // new but not colorized frame, return true
+		return 0;  // colorized frame, but no rotations
 	}
 
 	return IDENTIFY_NO_FRAME;  // no new frame, client has to update rotations!
