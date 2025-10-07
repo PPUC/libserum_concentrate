@@ -1737,6 +1737,18 @@ SERUM_API void Serum_SetStandardPalette(const uint8_t* palette, const int bitDep
 	}
 }
 
+uint32_t Calc_Next_Rotationv1(uint32_t now)
+{
+	uint32_t nextrot = 0xffffffff;
+	for (int ti = 0; ti < MAX_COLOR_ROTATIONS; ti++)
+	{
+		if (mySerum.rotations[ti * 3] == 255) continue;
+		if (colorrotnexttime[ti] < nextrot) nextrot = colorrotnexttime[ti];
+	}
+	if (nextrot == 0xffffffff) return 0;
+	return nextrot - now;
+}
+
 uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 {
 	// return IDENTIFY_NO_FRAME if no new frame detected
@@ -1794,23 +1806,24 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 					colorrotnexttime[ti] = 0;
 					continue;
 				}
-				// reset the timer if the previous frame had this rotation inactive
-				// or if the last init time is more than a new rotation away
-				if (colorrotnexttime[ti] == 0 || (colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10) <= now) colorshiftinittime[ti] = now;
-				if (mySerum.rotationtimer == 0)
-				{
-					mySerum.rotationtimer = colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10 - now;
+				// Reset the timer if the previous frame had this rotation inactive or if the last init time is more than a new rotation away.
+				// Otherwise, we keep the already running timings for subsequent frames like blinking PUSH START or GAME OVER.
+				if ((colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10) <= now) {
+					colorshiftinittime[ti] = now;
 					colorrotnexttime[ti] = colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10;
-					continue;
 				}
-				else if ((colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10 - now) < mySerum.rotationtimer) mySerum.rotationtimer = colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10 - now;
-				if (mySerum.rotationtimer <= 0) mySerum.rotationtimer = 10;
+
+				if (colorrotnexttime[ti] <= now) colorrotnexttime[ti] = colorshiftinittime[ti] + mySerum.rotations[ti * 3 + 2] * 10;
 			}
+
+			mySerum.rotationtimer = Calc_Next_Rotationv1(now);
+
 			if (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT)) {
 				lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 				lasttriggerTimestamp = now;
 			}
-			return (int)mySerum.rotationtimer;  // new frame
+
+			return mySerum.rotationtimer;
 		}
 	}
 
@@ -2057,18 +2070,6 @@ SERUM_API uint32_t Serum_Colorize(uint8_t* frame)
 	// return > 0 if new frame with rotations detected, the value is the delay before the first rotation in ms
 	if (g_serumData.SerumVersion == SERUM_V2) return Serum_ColorizeWithMetadatav2(frame);
 	else return Serum_ColorizeWithMetadatav1(frame);
-}
-
-uint32_t Calc_Next_Rotationv1(uint32_t now)
-{
-	uint32_t nextrot = 0xffffffff;
-	for (int ti = 0; ti < MAX_COLOR_ROTATIONS; ti++)
-	{
-		if (mySerum.rotations[ti * 3] == 255) continue;
-		if (colorrotnexttime[ti] < nextrot) nextrot = colorrotnexttime[ti];
-	}
-	if (nextrot == 0xffffffff) return 0;
-	return nextrot - now;
 }
 
 uint32_t Serum_ApplyRotationsv1(void)
