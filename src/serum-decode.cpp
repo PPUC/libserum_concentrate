@@ -1765,7 +1765,7 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame)
 			framesSkippedCounter = 0;
 		}
 
-		if (frameID == IDENTIFY_SAME_FRAME) return IDENTIFY_NO_FRAME;
+		if (frameID == IDENTIFY_SAME_FRAME) return IDENTIFY_SAME_FRAME;
 
 		mySerum.frameID = frameID;
 		mySerum.rotationtimer = 0;
@@ -1873,6 +1873,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			mySerum.rotationtimer = 0;
 		}
 
+		// lastfound is set by Identify_Frame, check if we have a new PUP trigger
 		if (!sceneFrameRequested && (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
@@ -1889,12 +1890,10 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 					sceneCurrentFrame = 0;
 					if (sceneStartImmediately)
 					{
+						// Overwrite the current frame with the first scene frame, ignore the result
 						g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame++, frame);
 					}
-					else
-					{
-						mySerum.rotationtimer = sceneDurationPerFrame;
-					}
+					mySerum.rotationtimer = sceneDurationPerFrame | FLAG_RETURNED_V2_SCENE;
                 }
             }
 		}
@@ -2042,7 +2041,7 @@ uint32_t Serum_ApplyRotationsv1(void)
 			colorshifts[ti] %= mySerum.rotations[ti * 3 + 1];
 			colorshiftinittime[ti] = now;
 			colorrotnexttime[ti] = now + mySerum.rotations[ti * 3 + 2] * 10;
-			isrotation = 0x10000;
+			isrotation = FLAG_RETURNED_V1_ROTATED;
 			uint8_t palsave[3 * 64];
 			memcpy(palsave, &mySerum.palette[mySerum.rotations[ti * 3] * 3], (size_t)mySerum.rotations[ti * 3 + 1] * 3);
 			for (int tj = 0; tj < mySerum.rotations[ti * 3 + 1]; tj++)
@@ -2085,8 +2084,11 @@ uint32_t Serum_ApplyRotationsv2(void)
 
 	if (g_serumData.sceneGenerator->isActive() && sceneCurrentFrame < sceneFrameCount)
 	{
-		if (g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame))
+		uint16_t result = g_serumData.sceneGenerator->generateFrame(lasttriggerID, sceneCurrentFrame, sceneFrame);
+		// if result is 0xffff, the frame was generated and we can go
+		if (0xffff == result)
 		{
+			mySerum.rotationtimer = sceneDurationPerFrame;
 			Serum_ColorizeWithMetadatav2(sceneFrame, true);
 			sceneCurrentFrame++;
 			if (sceneCurrentFrame >= sceneFrameCount && sceneRepeatCount > 0)
@@ -2133,12 +2135,18 @@ uint32_t Serum_ApplyRotationsv2(void)
 				}
 			}
 		}
+		else if (result > 0)
+		{
+			// frame not ready yet, return the time to wait
+			mySerum.rotationtimer = result;
+			return mySerum.rotationtimer | FLAG_RETURNED_V2_SCENE;
+		}
 		else
 		{
 			sceneFrameCount = 0; // error generating scene frame, stop the scene
 			mySerum.rotationtimer = 0;
 		}
-		return (mySerum.rotationtimer & 0xffff) | 0x10000 | 0x20000; // scene frame, so we consider both frames changed
+		return (mySerum.rotationtimer & 0xffff) | FLAG_RETURNED_V2_ROTATED32 | FLAG_RETURNED_V2_ROTATED64 | FLAG_RETURNED_V2_SCENE; // scene frame, so we consider both frames changed
 	}
 
 	uint32_t isrotation = 0;
@@ -2158,7 +2166,7 @@ uint32_t Serum_ApplyRotationsv2(void)
 				colorshifts32[ti] %= mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION];
 				colorshiftinittime32[ti] = now;
 				colorrotnexttime32[ti] = now + mySerum.rotations32[ti * MAX_LENGTH_COLOR_ROTATION + 1];
-				isrotation |= 0x10000;
+				isrotation |= FLAG_RETURNED_V2_ROTATED32;
 				for (uint32_t tj = 0; tj < sizeframe; tj++)
 				{
 					if (mySerum.rotationsinframe32[tj * 2] == ti)
@@ -2185,7 +2193,7 @@ uint32_t Serum_ApplyRotationsv2(void)
 				colorshifts64[ti] %= mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION];
 				colorshiftinittime64[ti] = now;
 				colorrotnexttime64[ti] = now + mySerum.rotations64[ti * MAX_LENGTH_COLOR_ROTATION + 1];
-				isrotation |= 0x20000;
+				isrotation |= FLAG_RETURNED_V2_ROTATED64;
 				for (uint32_t tj = 0; tj < sizeframe; tj++)
 				{
 					if (mySerum.rotationsinframe64[tj * 2] == ti)
@@ -2247,7 +2255,7 @@ SERUM_API bool Serum_Scene_GetInfo(uint16_t sceneId, uint16_t* frameCount, uint1
 
 SERUM_API bool Serum_Scene_GenerateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t* buffer, int group) {
     if (!g_serumData.sceneGenerator) return false;
-    return g_serumData.sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group);
+    return (0xffff == g_serumData.sceneGenerator->generateFrame(sceneId, frameIndex, buffer, group, true));
 }
 
 SERUM_API void Serum_Scene_SetDepth(uint8_t depth) {

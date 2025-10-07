@@ -28,6 +28,7 @@ enum // returned flags that are added to the timings if there were rotations (up
 	FLAG_RETURNED_V1_ROTATED = 0x10000,
 	FLAG_RETURNED_V2_ROTATED32 = 0x10000,
 	FLAG_RETURNED_V2_ROTATED64 = 0x20000,
+	FLAG_RETURNED_V2_SCENE = 0x40000,
 };
 
 typedef struct _Serum_Frame_Struc
@@ -63,7 +64,7 @@ typedef struct _Serum_Frame_Struc
 	uint32_t ntriggers; // number of triggers in the Serum file
 	uint32_t triggerID; // return 0xffff if no trigger for that frame, the ID of the trigger if one is set for that frame
 	uint32_t frameID; // for CDMD ingame tester
-	uint32_t rotationtimer; 
+	uint32_t rotationtimer;
 }Serum_Frame_Struc;
 
 const int MAX_DYNA_4COLS_PER_FRAME = 16;  // max number of color sets for dynamic content for each frame (old version)

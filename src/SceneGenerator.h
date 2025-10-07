@@ -52,7 +52,7 @@ public:
                     uint8_t &repeat, uint8_t &endFrame) const;
   bool getAutoStartSceneInfo(uint16_t &frameCount, uint16_t &durationPerFrame, bool &interruptable, bool &startImmediately,
                              uint8_t &repeat, uint8_t &endFrame) const;
-  bool generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t *buffer, int group = -1);
+  uint16_t generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t *buffer, int group = -1, bool disableTimer = false);
   void setDepth(uint8_t depth);
   int getDepth() const { return m_depth; }
   bool isActive() const { return m_active; }

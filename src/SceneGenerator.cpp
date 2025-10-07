@@ -220,20 +220,30 @@ bool SceneGenerator::getAutoStartSceneInfo(uint16_t &frameCount, uint16_t &durat
   return false;
 }
 
-bool SceneGenerator::generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t *buffer, int group)
+uint16_t SceneGenerator::generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_t *buffer, int group, bool disableTimer)
 {
+  static uint32_t lastTime = 0;
+  if (frameIndex == 0) lastTime = 0; // Reset timer for new scene
+  uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+
   auto it = std::find_if(m_sceneData.begin(), m_sceneData.end(),
                          [sceneId](const SceneData &data)
                          { return data.sceneId == sceneId; });
 
   if (it == m_sceneData.end())
   {
-    return false;
+    return 0;
   }
 
   if (frameIndex < 0 || frameIndex >= it->frameCount)
   {
-    return false;
+    return 0;
+  }
+
+  if (!disableTimer && (lastTime + it->durationPerFrame) > now)
+  {
+    // Too soon to generate the next frame, return remaining time
+    return it->durationPerFrame - (now - lastTime);
   }
 
   if (frameIndex == 0)
@@ -277,7 +287,7 @@ bool SceneGenerator::generateFrame(uint16_t sceneId, uint16_t frameIndex, uint8_
   std::string frameStr = formatNumber(frameIndex + 1, NUMBER_WIDTH);
   renderString(buffer, frameStr, NUM_X, FRAME_Y);
 
-  return true;
+  return 0xffff; // Success
 }
 
 void SceneGenerator::initializeTemplate()
