@@ -84,6 +84,7 @@ const int ROTATION_SIZE = 3 * MAX_COLOR_ROTATIONS;  // size of a color rotation 
 const int MAX_BACKGROUND_IMAGES = 255;  // max number of background images
 
 const uint32_t IDENTIFY_NO_FRAME = 0xffffffff; // returned in Serum_Frame_Struc::frameID if no matching frame detected in the Serum file
+const uint32_t IDENTIFY_SAME_FRAME = 0xfffffffe;
 
 typedef Serum_Frame_Struc* (*Serum_LoadFunc)(const char* const altcolorpath, const char* const romname, uint8_t flags);
 typedef void (*Serum_DisposeFunc)(void);

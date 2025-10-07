@@ -65,7 +65,6 @@ uint8_t lastFrame[192 * 64] = { 0 };
 const int pathbuflen = 4096;
 
 const uint32_t MAX_NUMBER_FRAMES = 0x7fffffff;
-const uint32_t IDENTIFY_SAME_FRAME = 0xfffffffe;
 
 const uint16_t greyscale_4[4] = {
     0x0000,  // Black (0, 0, 0)
