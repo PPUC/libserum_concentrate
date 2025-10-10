@@ -121,7 +121,7 @@ bool SerumData::SaveToFile(const char *filename)
     try
     {
         // Serialize to memory buffer first
-        std::stringstream ss;
+        std::stringstream ss(std::ios::binary);
         {
             cereal::PortableBinaryOutputArchive archive(ss);
             archive(*this);
@@ -234,9 +234,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         }
 
         // Deserialize from memory buffer
-        std::stringstream ss;
-        ss.write((const char *)decompressedData.data(), dstLen);
-
+        std::istringstream ss(std::string(reinterpret_cast<const char*>(decompressedData.data()), dstLen), std::ios::binary);
         {
             cereal::PortableBinaryInputArchive archive(ss);
             archive(*this);
