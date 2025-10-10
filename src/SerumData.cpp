@@ -24,7 +24,7 @@ SerumData::SerumData() : SerumVersion(0),
                          spritedescriptionsc(0),
                          isextrasprite(0, true),
                          spriteoriginal(255), // Do not compress because GetSpriteSize seems to have an issue with it.
-                         spritemaskx(255), // Do not compress because GetSpriteSize seems to have an issue with it.
+                         spritemaskx(255),    // Do not compress because GetSpriteSize seems to have an issue with it.
                          spritecolored(0, false, true),
                          spritecoloredx(0, false, true),
                          activeframes(1),
@@ -115,6 +115,7 @@ void SerumData::Clear()
 
 bool SerumData::SaveToFile(const char *filename)
 {
+#ifdef WRITE_CROMC
     try
     {
         // Serialize to memory buffer first
@@ -156,8 +157,9 @@ bool SerumData::SaveToFile(const char *filename)
     }
     catch (...)
     {
-        return false;
     }
+#endif
+    return false;
 }
 
 bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
