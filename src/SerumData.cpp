@@ -121,7 +121,7 @@ bool SerumData::SaveToFile(const char *filename)
     try
     {
         // Serialize to memory buffer first
-        std::stringstream ss(std::ios::binary);
+        std::ostringstream ss(std::ios::binary);
         {
             cereal::PortableBinaryOutputArchive archive(ss);
             archive(*this);
