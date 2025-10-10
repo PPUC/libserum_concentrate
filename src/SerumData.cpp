@@ -1,7 +1,9 @@
 #include "SerumData.h"
 #include "miniz/miniz.h"
+#include "serum-version.h"
 
 SerumData::SerumData() : SerumVersion(0),
+                         concentrateFileVersion(SERUM_CONCENTRATE_VERSION),
                          is256x64(false),
                          hashcodes(0, true),
                          shapecompmode(0),
@@ -145,9 +147,18 @@ bool SerumData::SaveToFile(const char *filename)
         if (!fp)
             return false;
 
-        // Write original size first
+        // Write magic string first
+        const char magic[] = "CROM";
+        fwrite(magic, 1, 4, fp);
+
+        // Write version
+        uint16_t littleVersion = ToLittleEndian16(concentrateFileVersion);
+        fwrite(&littleVersion, sizeof(uint16_t), 1, fp);
+
+        // Write original size
         uint32_t originalSize = (uint32_t)srcLen;
-        fwrite(&originalSize, sizeof(uint32_t), 1, fp);
+        uint32_t littleEndianSize = ToLittleEndian32(originalSize);
+        fwrite(&littleEndianSize, sizeof(uint32_t), 1, fp);
 
         // Write compressed data
         fwrite(compressedData.data(), 1, dstLen, fp);
@@ -172,18 +183,34 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         if (!fp)
             return false;
 
-        // Read original size
-        uint32_t originalSize;
-        if (fread(&originalSize, sizeof(uint32_t), 1, fp) != 1)
+        // Read and verify magic string
+        char magic[5] = {0};
+        if (fread(magic, 1, 4, fp) != 4 || strcmp(magic, "CROM") != 0)
         {
             fclose(fp);
             return false;
         }
 
+        uint16_t littleEndianVersion;
+        if (fread(&littleEndianVersion, sizeof(uint16_t), 1, fp) != 1)
+        {
+            fclose(fp);
+            return false;
+        }
+        concentrateFileVersion = FromLittleEndian16(littleEndianVersion);
+
+        // Read original size
+        uint32_t littleEndianSize;
+        if (fread(&littleEndianSize, sizeof(uint32_t), 1, fp) != 1) {
+            fclose(fp);
+            return false;
+        }
+        uint32_t originalSize = FromLittleEndian32(littleEndianSize);
+
         // Get compressed data size
         fseek(fp, 0, SEEK_END);
-        long compressedSize = ftell(fp) - sizeof(uint32_t);
-        fseek(fp, sizeof(uint32_t), SEEK_SET);
+        long compressedSize = ftell(fp) - (4 + sizeof(uint16_t) + sizeof(uint32_t)); // Adjust for magic(4) + version bytes(2) + size(4)
+        fseek(fp, 4 + sizeof(uint16_t) + sizeof(uint32_t), SEEK_SET);
 
         // Read compressed data
         std::vector<unsigned char> compressedData(compressedSize);

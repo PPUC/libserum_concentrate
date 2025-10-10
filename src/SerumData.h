@@ -11,6 +11,40 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include "serum.h"
+#include <cstdint>
+
+inline uint16_t ToLittleEndian16(uint16_t value) {
+    uint16_t result;
+    uint8_t* data = (uint8_t*)&result;
+    data[0] = value & 0xFF;
+    data[1] = (value >> 8) & 0xFF;
+    return result;
+}
+
+inline uint16_t FromLittleEndian16(uint16_t value) {
+    const uint8_t* data = (uint8_t*)&value;
+    return (uint16_t)data[0] |
+           ((uint16_t)data[1] << 8);
+}
+
+inline uint32_t ToLittleEndian32(uint32_t value) {
+    uint32_t result;
+    uint8_t* data = (uint8_t*)&result;
+    data[0] = value & 0xFF;
+    data[1] = (value >> 8) & 0xFF;
+    data[2] = (value >> 16) & 0xFF;
+    data[3] = (value >> 24) & 0xFF;
+    return result;
+}
+
+inline uint32_t FromLittleEndian32(uint32_t value) {
+    const uint8_t* data = (uint8_t*)&value;
+    return (uint32_t)data[0] |
+           ((uint32_t)data[1] << 8) |
+           ((uint32_t)data[2] << 16) |
+           ((uint32_t)data[3] << 24);
+}
+
 
 class SerumData
 {
@@ -97,7 +131,7 @@ private:
     template <class Archive>
     void serialize(Archive &ar)
     {
-        ar(rname, SerumVersion, concentrateFileVersion,
+        ar(rname, SerumVersion,
            fwidth, fheight, fwidthx, fheightx,
            nframes, nocolors, nccolors,
            ncompmasks, nmovmasks, nsprites,
