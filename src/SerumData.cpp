@@ -224,12 +224,23 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
             return false;
         }
         uint32_t originalSize = FromLittleEndian32(littleEndianSize);
-        Log("cROMc size %d", originalSize);
-
-        // Get compressed data size
+        Log("cROMc size %lu", originalSize);
+        // Get total file size
         fseek(fp, 0, SEEK_END);
-        long compressedSize = ftell(fp) - (4 + sizeof(uint16_t) + sizeof(uint32_t)); // Adjust for magic(4) + version bytes(2) + size(4)
+        long totalSize = ftell(fp);
+        // Adjust for magic(4) + version bytes(2) + size bytes(4)
         fseek(fp, 4 + sizeof(uint16_t) + sizeof(uint32_t), SEEK_SET);
+
+        // Calculate compressed size
+        long compressedSize = totalSize - (4 + sizeof(uint16_t) + sizeof(uint32_t));
+
+        // Validate sizes
+        if (compressedSize <= 0 || totalSize <= 0)
+        {
+            Log("Invalid file size detected in %s", filename);
+            fclose(fp);
+            return false;
+        }
 
         // Read compressed data
         std::vector<unsigned char> compressedData(compressedSize);
