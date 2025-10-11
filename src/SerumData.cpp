@@ -128,9 +128,9 @@ bool SerumData::SaveToFile(const char *filename)
         }
         std::string data = ss.str();
 
-        // Compress data
-        uLong srcLen = (uLong)data.size();
-        uLong dstLen = compressBound(srcLen);
+        // Compress data - use uint32_t for consistent sizes
+        uint32_t srcLen = (uint32_t)data.size();
+        mz_ulong dstLen = compressBound(srcLen);
         std::vector<unsigned char> compressedData(dstLen);
 
         int status = compress2(compressedData.data(), &dstLen,
@@ -160,8 +160,7 @@ bool SerumData::SaveToFile(const char *filename)
         fwrite(&littleVersion, sizeof(uint16_t), 1, fp);
 
         // Write original size
-        uint32_t originalSize = (uint32_t)srcLen;
-        uint32_t littleEndianSize = ToLittleEndian32(originalSize);
+        uint32_t littleEndianSize = ToLittleEndian32((uint32_t) srcLen); // Use srcLen directly
         fwrite(&littleEndianSize, sizeof(uint32_t), 1, fp);
 
         // Write compressed data
@@ -178,7 +177,7 @@ bool SerumData::SaveToFile(const char *filename)
     }
     catch (...)
     {
-        Log("Filed to write %s", filename);
+        Log("Failed to write %s", filename);
         return false;
     }
 }
@@ -192,7 +191,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         FILE *fp = fopen(filename, "rb");
         if (!fp)
         {
-            Log("Filed to open %s", filename);
+            Log("Failed to open %s", filename);
             return false;
         }
 
@@ -224,23 +223,46 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
             return false;
         }
         uint32_t originalSize = FromLittleEndian32(littleEndianSize);
-        Log("cROMc size %lu", originalSize);
-        // Get total file size
+        Log("cROMc size %u", originalSize);
+
+        // Get total file size - use portable types
         fseek(fp, 0, SEEK_END);
-        long totalSize = ftell(fp);
+        long totalSizeLong = ftell(fp);
+        if (totalSizeLong < 0)
+        {
+            Log("Failed to get file size for %s", filename);
+            fclose(fp);
+            return false;
+        }
+        if (totalSizeLong > UINT32_MAX)
+        {
+            Log("File exceeds size limit %s", filename);
+            fclose(fp);
+            return false;
+        }
+        uint32_t totalSize = (uint32_t)totalSizeLong;
+
         // Adjust for magic(4) + version bytes(2) + size bytes(4)
-        fseek(fp, 4 + sizeof(uint16_t) + sizeof(uint32_t), SEEK_SET);
+        uint32_t headerSize = 4 + sizeof(uint16_t) + sizeof(uint32_t);
+        fseek(fp, headerSize, SEEK_SET);
 
         // Calculate compressed size
-        long compressedSize = totalSize - (4 + sizeof(uint16_t) + sizeof(uint32_t));
+        if (totalSize < headerSize)
+        {
+            Log("File too small in %s", filename);
+            fclose(fp);
+            return false;
+        }
+        uint32_t compressedSize = totalSize - headerSize;
 
         // Validate sizes
-        if (compressedSize <= 0 || totalSize <= 0)
+        if (compressedSize == 0 || originalSize == 0)
         {
             Log("Invalid file size detected in %s", filename);
             fclose(fp);
             return false;
         }
+        Log("cROMc compressed size %u", compressedSize); // Changed %lu to %u
 
         // Read compressed data
         std::vector<unsigned char> compressedData(compressedSize);
@@ -252,12 +274,13 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         }
         fclose(fp);
 
-        // Decompress data
+        // Decompress data - use consistent uint32_t
+        Log("Uncompressing %s", filename);
         std::vector<unsigned char> decompressedData(originalSize);
-        uLong dstLen = originalSize;
+        mz_ulong dstLen;
 
         int status = uncompress(decompressedData.data(), &dstLen,
-                                compressedData.data(), compressedSize);
+                                compressedData.data(), (mz_ulong) compressedSize);
 
         if (status != MZ_OK)
         {
@@ -281,7 +304,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
     }
     catch (...)
     {
-        Log("Unknown expection when opening %s", filename);
+        Log("Unknown exception when opening %s", filename);
         return false;
     }
 }
