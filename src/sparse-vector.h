@@ -27,13 +27,8 @@ protected:
 
 public:
 	SparseVector(T noDataSignature, bool index, bool compress = false)
-		: useIndex(index)
+		: useIndex(index), useCompression(compress)
 	{
-#ifdef WRITE_CROMC
-		useCompression = compress;
-#else
-		useCompression = false; // Disable compression if WRITE_CROMC is not defined
-#endif
 		noData.resize(1, noDataSignature);
 	}
 
@@ -132,7 +127,11 @@ public:
 						reinterpret_cast<char *>(compBuffer.data()),
 						static_cast<int>(elementSize * sizeof(T)),
 						static_cast<int>(maxCompressedSize),
-						12 // max compression level
+#ifdef WRITE_CROMC
+						LZ4HC_CLEVEL_MAX // max compression level
+#else
+						LZ4HC_CLEVEL_MIN // min compression level
+#endif
 					);
 
 					if (compressedSize > 0)
