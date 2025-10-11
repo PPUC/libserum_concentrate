@@ -1,5 +1,4 @@
 #include "SerumData.h"
-#include "miniz/miniz.h"
 #include "serum-version.h"
 
 SerumData::SerumData() : SerumVersion(0),
@@ -128,22 +127,7 @@ bool SerumData::SaveToFile(const char *filename)
         }
         std::string data = ss.str();
 
-        // Compress data - use uint32_t for consistent sizes
-        uint32_t srcLen = (uint32_t)data.size();
-        mz_ulong dstLen = compressBound(srcLen);
-        std::vector<unsigned char> compressedData(dstLen);
-
-        int status = compress2(compressedData.data(), &dstLen,
-                               (const unsigned char *)data.data(), srcLen,
-                               MZ_BEST_COMPRESSION);
-
-        if (status != MZ_OK)
-        {
-            Log("Compression error: %d", status);
-            return false;
-        }
-
-        // Write compressed data to file
+        // Write data directly to file (no compression)
         FILE *fp = fopen(filename, "wb");
         if (!fp)
         {
@@ -159,12 +143,13 @@ bool SerumData::SaveToFile(const char *filename)
         uint16_t littleVersion = ToLittleEndian16(concentrateFileVersion);
         fwrite(&littleVersion, sizeof(uint16_t), 1, fp);
 
-        // Write original size
-        uint32_t littleEndianSize = ToLittleEndian32((uint32_t) srcLen); // Use srcLen directly
+        // Write data size
+        uint32_t dataSize = (uint32_t)data.size();
+        uint32_t littleEndianSize = ToLittleEndian32(dataSize);
         fwrite(&littleEndianSize, sizeof(uint32_t), 1, fp);
 
-        // Write compressed data
-        fwrite(compressedData.data(), 1, dstLen, fp);
+        // Write serialized data directly (no compression)
+        fwrite(data.data(), 1, dataSize, fp);
         fclose(fp);
 
         Log("Writing %s finished", filename);
@@ -214,7 +199,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         concentrateFileVersion = FromLittleEndian16(littleEndianVersion);
         Log("cROMc version %d", concentrateFileVersion);
 
-        // Read original size
+        // Read data size
         uint32_t littleEndianSize;
         if (fread(&littleEndianSize, sizeof(uint32_t), 1, fp) != 1)
         {
@@ -222,51 +207,20 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
             fclose(fp);
             return false;
         }
-        uint32_t originalSize = FromLittleEndian32(littleEndianSize);
-        Log("cROMc size %u", originalSize);
+        uint32_t dataSize = FromLittleEndian32(littleEndianSize);
+        Log("cROMc size %u", dataSize);
 
-        // Get total file size - use portable types
-        fseek(fp, 0, SEEK_END);
-        long totalSizeLong = ftell(fp);
-        if (totalSizeLong < 0)
-        {
-            Log("Failed to get file size for %s", filename);
-            fclose(fp);
-            return false;
-        }
-        if (totalSizeLong > UINT32_MAX)
-        {
-            Log("File exceeds size limit %s", filename);
-            fclose(fp);
-            return false;
-        }
-        uint32_t totalSize = (uint32_t)totalSizeLong;
-
-        // Adjust for magic(4) + version bytes(2) + size bytes(4)
-        uint32_t headerSize = 4 + sizeof(uint16_t) + sizeof(uint32_t);
-        fseek(fp, headerSize, SEEK_SET);
-
-        // Calculate compressed size
-        if (totalSize < headerSize)
-        {
-            Log("File too small in %s", filename);
-            fclose(fp);
-            return false;
-        }
-        uint32_t compressedSize = totalSize - headerSize;
-
-        // Validate sizes
-        if (compressedSize == 0 || originalSize == 0)
+        // Validate size
+        if (dataSize == 0)
         {
             Log("Invalid file size detected in %s", filename);
             fclose(fp);
             return false;
         }
-        Log("cROMc compressed size %u", compressedSize); // Changed %lu to %u
 
-        // Read compressed data
-        std::vector<unsigned char> compressedData(compressedSize);
-        if (fread(compressedData.data(), 1, compressedSize, fp) != compressedSize)
+        // Read serialized data directly (no decompression needed)
+        std::vector<char> fileData(dataSize);
+        if (fread(fileData.data(), 1, dataSize, fp) != dataSize)
         {
             Log("Failed to read data from %s", filename);
             fclose(fp);
@@ -274,22 +228,9 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         }
         fclose(fp);
 
-        // Decompress data - use consistent uint32_t
-        Log("Uncompressing %s", filename);
-        std::vector<unsigned char> decompressedData(originalSize);
-        mz_ulong dstLen = (mz_ulong) originalSize;
-
-        int status = uncompress(decompressedData.data(), &dstLen,
-                                compressedData.data(), (mz_ulong) compressedSize);
-
-        if (status != MZ_OK)
-        {
-            Log("Failed to uncompress %s, error code: %d", filename, status);
-            return false;
-        }
-
-        // Deserialize from memory buffer
-        std::istringstream ss(std::string(reinterpret_cast<const char *>(decompressedData.data()), dstLen), std::ios::binary);
+        // Deserialize from memory buffer directly
+        Log("Loading %s", filename);
+        std::istringstream ss(std::string(fileData.data(), dataSize), std::ios::binary);
         {
             cereal::PortableBinaryInputArchive archive(ss);
             archive(*this);
