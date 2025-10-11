@@ -145,7 +145,8 @@ bool SerumData::SaveToFile(const char *filename)
 
         // Write compressed data to file
         FILE *fp = fopen(filename, "wb");
-        if (!fp) {
+        if (!fp)
+        {
             Log("Failed to open %s for writing", filename);
             return false;
         }
@@ -170,6 +171,11 @@ bool SerumData::SaveToFile(const char *filename)
         Log("Writing %s finished", filename);
         return true;
     }
+    catch (const std::exception &e)
+    {
+        Log("Exception when writing %s: %s", filename, e.what());
+        return false;
+    }
     catch (...)
     {
         Log("Filed to write %s", filename);
@@ -184,8 +190,9 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
     try
     {
         FILE *fp = fopen(filename, "rb");
-        if (!fp) {
-Log("Filed to open %s", filename);
+        if (!fp)
+        {
+            Log("Filed to open %s", filename);
             return false;
         }
 
@@ -210,7 +217,8 @@ Log("Filed to open %s", filename);
 
         // Read original size
         uint32_t littleEndianSize;
-        if (fread(&littleEndianSize, sizeof(uint32_t), 1, fp) != 1) {
+        if (fread(&littleEndianSize, sizeof(uint32_t), 1, fp) != 1)
+        {
             Log("Failed to detect cROMc size of %s", filename);
             fclose(fp);
             return false;
@@ -247,13 +255,18 @@ Log("Filed to open %s", filename);
         }
 
         // Deserialize from memory buffer
-        std::istringstream ss(std::string(reinterpret_cast<const char*>(decompressedData.data()), dstLen), std::ios::binary);
+        std::istringstream ss(std::string(reinterpret_cast<const char *>(decompressedData.data()), dstLen), std::ios::binary);
         {
             cereal::PortableBinaryInputArchive archive(ss);
             archive(*this);
         }
 
         return true;
+    }
+    catch (const std::exception &e)
+    {
+        Log("Exception when opening %s: %s", filename, e.what());
+        return false;
     }
     catch (...)
     {
@@ -262,15 +275,15 @@ Log("Filed to open %s", filename);
     }
 }
 
-void SerumData::Log(const char* format, ...)
+void SerumData::Log(const char *format, ...)
 {
-  if (!m_logCallback)
-  {
-    return;
-  }
+    if (!m_logCallback)
+    {
+        return;
+    }
 
-  va_list args;
-  va_start(args, format);
-  (*(m_logCallback))(format, args, m_logUserData);
-  va_end(args);
+    va_list args;
+    va_start(args, format);
+    (*(m_logCallback))(format, args, m_logUserData);
+    va_end(args);
 }
