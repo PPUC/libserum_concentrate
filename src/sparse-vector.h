@@ -27,8 +27,13 @@ protected:
 
 public:
 	SparseVector(T noDataSignature, bool index, bool compress = false)
-		: useIndex(index), useCompression(compress)
+		: useIndex(index)
 	{
+#ifdef WRITE_CROMC
+		useCompression = compress;
+#else
+		useCompression = false; // Disable compression if WRITE_CROMC is not defined
+#endif
 		noData.resize(1, noDataSignature);
 	}
 

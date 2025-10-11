@@ -117,7 +117,6 @@ void SerumData::Clear()
 
 bool SerumData::SaveToFile(const char *filename)
 {
-#ifdef WRITE_CROMC
     try
     {
         // Serialize to memory buffer first
@@ -168,9 +167,8 @@ bool SerumData::SaveToFile(const char *filename)
     }
     catch (...)
     {
+        return false;
     }
-#endif
-    return false;
 }
 
 bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
