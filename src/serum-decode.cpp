@@ -51,6 +51,22 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 
 #pragma warning(disable : 4996)
 
+Serum_LogCallback logCallback = nullptr;
+const void *logUserData = nullptr;
+
+void Log(const char* format, ...)
+{
+  if (!logCallback)
+  {
+    return;
+  }
+
+  va_list args;
+  va_start(args, format);
+  (*(logCallback))(format, args, logUserData);
+  va_end(args);
+}
+
 static SerumData g_serumData;
 uint16_t sceneFrameCount = 0;
 uint16_t sceneCurrentFrame = 0;
@@ -130,6 +146,13 @@ uint32_t rotationnextabsolutetime[MAX_COLOR_ROTATIONS]; // cumulative time for t
 Serum_Frame_Struc mySerum; // structure to keep communicate colorization data
 
 uint8_t* frameshape = NULL; // memory for shape mode conversion of ythe frame
+
+SERUM_API void Serum_SetLogCallback(Serum_LogCallback callback, const void* userData)
+{
+  g_serumData.SetLogCallback(callback, userData);
+  logCallback = callback;
+  logUserData = userData;
+}
 
 static std::string to_lower(const std::string& str)
 {
@@ -953,24 +976,33 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 	pathbuf += '/';
 
 	std::optional<std::string> csvFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".pup.csv");
-#ifdef WRITE_CROMC
 	if (csvFoundFile)
 	{
+		Log("Found %s", csvFoundFile->c_str());
+#ifdef WRITE_CROMC
 		flags |= FLAG_REQUEST_32P_FRAMES | FLAG_REQUEST_64P_FRAMES; // request both frame types for updating concentrate
-	}
 #endif
+	}
 	Serum_Frame_Struc* result = NULL;
 	std::optional<std::string> pFoundFile = find_case_insensitive_file(pathbuf, std::string(romname) + ".cROMc");
 
 	if (pFoundFile)
 	{
+		Log("Found %s", pFoundFile->c_str());
 		result = Serum_LoadConcentrate(pFoundFile->c_str(), flags);
-		if (result && csvFoundFile && g_serumData.SerumVersion == SERUM_V2 && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
+		if (result)
 		{
+			Log("Loaded %s", pFoundFile->c_str());
+			if (csvFoundFile && g_serumData.SerumVersion == SERUM_V2 && g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str()))
+			{
 #ifdef WRITE_CROMC
-			// Update the concentrate file with new PUP data
-			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
+				// Update the concentrate file with new PUP data
+				if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
 #endif
+			}
+		}
+		else {
+			Log("Failed to load %s", pFoundFile->c_str());
 		}
 	}
 
@@ -986,13 +1018,18 @@ SERUM_API Serum_Frame_Struc* Serum_Load(const char* const altcolorpath, const ch
 			enabled = false;
 			return NULL;
 		}
+		Log("Found %s", pFoundFile->c_str());
 		result = Serum_LoadFilev1(pFoundFile->c_str(), flags);
 		if (result)
 		{
+			Log("Loaded %s", pFoundFile->c_str());
 			if (csvFoundFile && g_serumData.SerumVersion == SERUM_V2) g_serumData.sceneGenerator->parseCSV(csvFoundFile->c_str());
 #ifdef WRITE_CROMC
 			if (generateCRomC) Serum_SaveConcentrate(pFoundFile->c_str());
 #endif
+		}
+		else {
+			Log("Failed to load %s", pFoundFile->c_str());
 		}
 	}
 	if (result && g_serumData.sceneGenerator->isActive()) g_serumData.sceneGenerator->setDepth(result->nocolors == 16 ? 4 : 2);

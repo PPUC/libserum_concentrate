@@ -1,6 +1,15 @@
 #pragma once
 
-#include "stdint.h"
+#ifdef _MSC_VER
+#define SERUM_CALLBACK __stdcall
+#else
+#define SERUM_CALLBACK
+#endif
+
+#include <inttypes.h>
+#include <stdarg.h>
+
+typedef void(SERUM_CALLBACK* Serum_LogCallback)(const char* format, va_list args, const void* userData);
 
 enum // returned by Serum_Load in *SerumVersion
 {

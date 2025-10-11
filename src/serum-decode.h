@@ -2,15 +2,22 @@
 
 #ifdef _MSC_VER
 #define SERUM_API extern "C" __declspec(dllexport)
-#define SERUM_CALLBACK __stdcall
 #else
 #define SERUM_API extern "C" __attribute__((visibility("default")))
-#define SERUM_CALLBACK
 #endif
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #include "serum.h"
+
+/** @brief Set the log callback
+ *
+ *  Set the log callback.
+ *
+ *  @param callback
+ *  @param userData
+ */
+SERUM_API void Serum_SetLogCallback(Serum_LogCallback callback, const void* userData);
 
 /** @brief Load a Serum file.
  *

@@ -119,6 +119,7 @@ bool SerumData::SaveToFile(const char *filename)
 {
     try
     {
+        Log("Writing %s", filename);
         // Serialize to memory buffer first
         std::ostringstream ss(std::ios::binary);
         {
@@ -138,13 +139,16 @@ bool SerumData::SaveToFile(const char *filename)
 
         if (status != MZ_OK)
         {
+            Log("Compression error: %d", status);
             return false;
         }
 
         // Write compressed data to file
         FILE *fp = fopen(filename, "wb");
-        if (!fp)
+        if (!fp) {
+            Log("Failed to open %s for writing", filename);
             return false;
+        }
 
         // Write magic string first
         const char magic[] = "CROM";
@@ -163,10 +167,12 @@ bool SerumData::SaveToFile(const char *filename)
         fwrite(compressedData.data(), 1, dstLen, fp);
         fclose(fp);
 
+        Log("Writing %s finished", filename);
         return true;
     }
     catch (...)
     {
+        Log("Filed to write %s", filename);
         return false;
     }
 }
@@ -178,13 +184,16 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
     try
     {
         FILE *fp = fopen(filename, "rb");
-        if (!fp)
+        if (!fp) {
+Log("Filed to open %s", filename);
             return false;
+        }
 
         // Read and verify magic string
         char magic[5] = {0};
         if (fread(magic, 1, 4, fp) != 4 || strcmp(magic, "CROM") != 0)
         {
+            Log("Wrong header in %s", filename);
             fclose(fp);
             return false;
         }
@@ -192,18 +201,22 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         uint16_t littleEndianVersion;
         if (fread(&littleEndianVersion, sizeof(uint16_t), 1, fp) != 1)
         {
+            Log("Failed to detect cROMc version of %s", filename);
             fclose(fp);
             return false;
         }
         concentrateFileVersion = FromLittleEndian16(littleEndianVersion);
+        Log("cROMc version %d", concentrateFileVersion);
 
         // Read original size
         uint32_t littleEndianSize;
         if (fread(&littleEndianSize, sizeof(uint32_t), 1, fp) != 1) {
+            Log("Failed to detect cROMc size of %s", filename);
             fclose(fp);
             return false;
         }
         uint32_t originalSize = FromLittleEndian32(littleEndianSize);
+        Log("cROMc version %d", originalSize);
 
         // Get compressed data size
         fseek(fp, 0, SEEK_END);
@@ -214,6 +227,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         std::vector<unsigned char> compressedData(compressedSize);
         if (fread(compressedData.data(), 1, compressedSize, fp) != compressedSize)
         {
+            Log("Failed to read data from %s", filename);
             fclose(fp);
             return false;
         }
@@ -228,6 +242,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
 
         if (status != MZ_OK)
         {
+            Log("Failed to uncompress %s, error code: %d", filename, status);
             return false;
         }
 
@@ -242,6 +257,20 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
     }
     catch (...)
     {
+        Log("Unknown expection when opening %s", filename);
         return false;
     }
+}
+
+void SerumData::Log(const char* format, ...)
+{
+  if (!m_logCallback)
+  {
+    return;
+  }
+
+  va_list args;
+  va_start(args, format);
+  (*(m_logCallback))(format, args, m_logUserData);
+  va_end(args);
 }

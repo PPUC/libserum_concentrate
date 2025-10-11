@@ -13,23 +13,26 @@
 #include "serum.h"
 #include <cstdint>
 
-inline uint16_t ToLittleEndian16(uint16_t value) {
+inline uint16_t ToLittleEndian16(uint16_t value)
+{
     uint16_t result;
-    uint8_t* data = (uint8_t*)&result;
+    uint8_t *data = (uint8_t *)&result;
     data[0] = value & 0xFF;
     data[1] = (value >> 8) & 0xFF;
     return result;
 }
 
-inline uint16_t FromLittleEndian16(uint16_t value) {
-    const uint8_t* data = (uint8_t*)&value;
+inline uint16_t FromLittleEndian16(uint16_t value)
+{
+    const uint8_t *data = (uint8_t *)&value;
     return (uint16_t)data[0] |
            ((uint16_t)data[1] << 8);
 }
 
-inline uint32_t ToLittleEndian32(uint32_t value) {
+inline uint32_t ToLittleEndian32(uint32_t value)
+{
     uint32_t result;
-    uint8_t* data = (uint8_t*)&result;
+    uint8_t *data = (uint8_t *)&result;
     data[0] = value & 0xFF;
     data[1] = (value >> 8) & 0xFF;
     data[2] = (value >> 16) & 0xFF;
@@ -37,20 +40,31 @@ inline uint32_t ToLittleEndian32(uint32_t value) {
     return result;
 }
 
-inline uint32_t FromLittleEndian32(uint32_t value) {
-    const uint8_t* data = (uint8_t*)&value;
+inline uint32_t FromLittleEndian32(uint32_t value)
+{
+    const uint8_t *data = (uint8_t *)&value;
     return (uint32_t)data[0] |
            ((uint32_t)data[1] << 8) |
            ((uint32_t)data[2] << 16) |
            ((uint32_t)data[3] << 24);
 }
 
-
 class SerumData
 {
 public:
     SerumData();
     ~SerumData();
+
+    void SetLogCallback(Serum_LogCallback callback, const void *userData)
+    {
+        m_logCallback = callback;
+        m_logUserData = userData;
+
+        if (sceneGenerator)
+        {
+            sceneGenerator->SetLogCallback(callback, userData);
+        }
+    }
 
     void Clear();
     bool SaveToFile(const char *filename);
@@ -124,6 +138,11 @@ public:
     SceneGenerator *sceneGenerator;
 
 private:
+    void Log(const char* format, ...);
+
+    Serum_LogCallback m_logCallback = nullptr;
+    const void *m_logUserData = nullptr;
+
     uint8_t m_loadFlags = 0;
 
     friend class cereal::access;

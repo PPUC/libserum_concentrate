@@ -6,7 +6,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/access.hpp>
 #include "LZ4Stream.h"
-
+#include "serum.h"
 struct SceneData
 {
   uint16_t sceneId;
@@ -46,6 +46,12 @@ class SceneGenerator
 public:
   SceneGenerator();
 
+  void SetLogCallback(Serum_LogCallback callback, const void *userData)
+  {
+    m_logCallback = callback;
+    m_logUserData = userData;
+  }
+
   bool parseCSV(const std::string &csv_filename);
   bool generateDump(const std::string &dump_filename, int id = -1);
   bool getSceneInfo(uint16_t sceneId, uint16_t &frameCount, uint16_t &durationPerFrame, bool &interruptable, bool &startImmediately,
@@ -76,6 +82,11 @@ public:
   const std::vector<SceneData> &getSceneData() const { return m_sceneData; }
 
 private:
+  void Log(const char* format, ...);
+
+  Serum_LogCallback m_logCallback = nullptr;
+  const void *m_logUserData = nullptr;
+
   std::vector<SceneData> m_sceneData;
 
   const unsigned char *getCharFont(char c) const;

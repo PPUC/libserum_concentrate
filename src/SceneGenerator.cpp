@@ -448,3 +448,16 @@ void SceneGenerator::renderString(uint8_t *buffer, const std::string &str, uint8
     currentX += 6; // 5 pixels width + 1 pixel space
   }
 }
+
+void SceneGenerator::Log(const char* format, ...)
+{
+  if (!m_logCallback)
+  {
+    return;
+  }
+
+  va_list args;
+  va_start(args, format);
+  (*(m_logCallback))(format, args, m_logUserData);
+  va_end(args);
+}
