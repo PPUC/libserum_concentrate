@@ -1,5 +1,6 @@
 #include "SerumData.h"
 #include "serum-version.h"
+#include <cstring>
 
 SerumData::SerumData() : SerumVersion(0),
                          concentrateFileVersion(SERUM_CONCENTRATE_VERSION),
