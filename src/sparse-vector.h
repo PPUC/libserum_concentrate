@@ -18,7 +18,7 @@ protected:
 	std::vector<std::vector<T>> index;
 	std::unordered_map<uint32_t, std::vector<uint8_t>> data; // Changed to uint8_t for compressed data
 	std::vector<T> noData;
-	size_t elementSize = 0; // Size of each element in bytes
+	uint64_t elementSize = 0; // Size of each element in bytes
 	std::vector<T> decompBuffer;
 	bool useIndex;
 	bool useCompression;
