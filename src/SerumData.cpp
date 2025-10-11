@@ -219,7 +219,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
             return false;
         }
 
-        // Read serialized data directly (no decompression needed)
+        // Read serialized data
         std::vector<char> fileData(dataSize);
         if (fread(fileData.data(), 1, dataSize, fp) != dataSize)
         {
@@ -229,9 +229,18 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         }
         fclose(fp);
 
-        // Deserialize from memory buffer directly
         Log("Loading %s", filename);
-        std::istringstream ss(std::string(fileData.data(), dataSize), std::ios::binary);
+
+        // Create the string first, then the stream
+        std::string dataString(fileData.data(), dataSize);
+        std::istringstream ss;
+        ss.rdbuf()->pubsetbuf(const_cast<char *>(dataString.data()), dataString.size());
+        ss.str(dataString);
+
+        // Ensure the stream is in a good state
+        ss.clear();
+        ss.seekg(0);
+
         {
             cereal::PortableBinaryInputArchive archive(ss);
             archive(*this);
