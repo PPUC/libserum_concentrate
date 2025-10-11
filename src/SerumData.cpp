@@ -277,7 +277,7 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
         // Decompress data - use consistent uint32_t
         Log("Uncompressing %s", filename);
         std::vector<unsigned char> decompressedData(originalSize);
-        mz_ulong dstLen;
+        mz_ulong dstLen = (mz_ulong) originalSize;
 
         int status = uncompress(decompressedData.data(), &dstLen,
                                 compressedData.data(), (mz_ulong) compressedSize);
