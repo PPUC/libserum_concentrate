@@ -7,6 +7,7 @@
 #include <cereal/access.hpp>
 #include "LZ4Stream.h"
 #include "serum.h"
+
 struct SceneData
 {
   uint16_t sceneId;

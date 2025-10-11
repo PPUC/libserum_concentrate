@@ -216,7 +216,7 @@ Log("Filed to open %s", filename);
             return false;
         }
         uint32_t originalSize = FromLittleEndian32(littleEndianSize);
-        Log("cROMc version %d", originalSize);
+        Log("cROMc size %d", originalSize);
 
         // Get compressed data size
         fseek(fp, 0, SEEK_END);
