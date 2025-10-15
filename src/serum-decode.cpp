@@ -1643,8 +1643,8 @@ void Colorize_Spritev2(uint8_t* oframe, uint8_t nosprite, uint16_t frx, uint16_t
 					else
 					{
 						uint16_t tl;
-						if (fheightx == 64) tl = (tj + fry) / 2 * fwidth + (ti + frx) / 2;
-						else tl = (tj + fry) * 2 * fwidth + (ti + frx) * 2;
+						if (fheightx == 64) tl = (tj / 2 + fry) * fwidth + ti / 2 + frx;
+						else tl = (tj * 2 + fry) * fwidth + ti * 2 + frx;
 						pfr[tk] = dynasprite4colsx[(nosprite * MAX_DYNA_SETS_PER_SPRITE + dynacouche) * nocolors + oframe[tl]];
 						if (ColorInRotation(IDfound, pfr[tk], &prot[tk * 2], &prot[tk * 2 + 1], true))
 							pfr[tk] = prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION + 2 + (prot[tk * 2 + 1] + cshft[prot[tk * 2]]) % prt[prot[tk * 2] * MAX_LENGTH_COLOR_ROTATION]];
@@ -2038,3 +2038,4 @@ SERUM_API void Serum_EnableColorization()
 {
 	enabled = true;
 }
+
