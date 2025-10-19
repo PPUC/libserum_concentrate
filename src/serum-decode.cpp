@@ -77,6 +77,7 @@ uint8_t sceneRepeatCount = 0;
 uint8_t sceneEndFrame = 0;
 uint8_t sceneFrame[192 * 64] = { 0 };
 uint8_t lastFrame[192 * 64] = { 0 };
+bool monochromeMode = false;
 
 const int pathbuflen = 4096;
 
@@ -1925,6 +1926,8 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
+		monochromeMode = false;
+
 		if (!sceneFrameRequested)
 		{
 			// stop any scene
@@ -1950,6 +1953,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		if (!sceneFrameRequested && (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
+			if (lasttriggerID == 65432) monochromeMode = true;
 
             if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
             {
@@ -2072,7 +2076,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		}
 	}
 
-	if ((ignoreUnknownFramesTimeout && (now - lastframe_found) >= ignoreUnknownFramesTimeout) || (maxFramesToSkip && (frameID == IDENTIFY_NO_FRAME) && (++framesSkippedCounter >= maxFramesToSkip)))
+	if (monochromeMode || (ignoreUnknownFramesTimeout && (now - lastframe_found) >= ignoreUnknownFramesTimeout) || (maxFramesToSkip && (frameID == IDENTIFY_NO_FRAME) && (++framesSkippedCounter >= maxFramesToSkip)))
 	{
 		// apply standard palette
 		for (uint16_t y = 0; y < g_serumData.fheight; y++)
