@@ -2090,7 +2090,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			}
 		}
 
-		mySerum.flags |= FLAG_RETURNED_32P_FRAME_OK;
+		mySerum.flags = FLAG_RETURNED_32P_FRAME_OK;
 		mySerum.width32 = g_serumData.fwidth;
 		mySerum.width64 = 0;
 		mySerum.triggerID = 65432;
@@ -2104,7 +2104,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		}
 		mySerum.rotationtimer = 0;
 
-		return 0;  // "colorized" frame with no rotations
+		return 0xfffffffd; // monochrome frame ID
 	}
 
 	return IDENTIFY_NO_FRAME;  // no new frame, client has to update rotations!
