@@ -2104,7 +2104,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		}
 		mySerum.rotationtimer = 0;
 
-		return 0xfffffffd; // monochrome frame ID
+		return 0;  // "colorized" frame with no rotations
 	}
 
 	return IDENTIFY_NO_FRAME;  // no new frame, client has to update rotations!
