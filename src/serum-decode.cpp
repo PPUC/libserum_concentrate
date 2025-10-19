@@ -2093,8 +2093,8 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		mySerum.flags |= FLAG_RETURNED_32P_FRAME_OK;
 		mySerum.width32 = g_serumData.fwidth;
 		mySerum.width64 = 0;
-		mySerum.triggerID = 0xffffffff;
-		mySerum.frameID = 0xffffffff;
+		mySerum.triggerID = 65432;
+		mySerum.frameID = 0xfffffffd; // monochrome frame ID
 
 		// disable render features like rotations
 		for (uint8_t ti = 0; ti < MAX_COLOR_ROTATIONN; ti++)
