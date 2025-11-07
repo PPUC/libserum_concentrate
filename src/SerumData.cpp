@@ -1,6 +1,7 @@
 #include "SerumData.h"
 #include "miniz/miniz.h"
 #include "serum-version.h"
+#include "DecompressingIStream.h"
 
 SerumData::SerumData() : SerumVersion(0),
                          concentrateFileVersion(SERUM_CONCENTRATE_VERSION),
@@ -160,7 +161,7 @@ bool SerumData::SaveToFile(const char *filename)
         fwrite(&littleVersion, sizeof(uint16_t), 1, fp);
 
         // Write original size
-        uint32_t littleEndianSize = ToLittleEndian32((uint32_t) srcLen); // Use srcLen directly
+        uint32_t littleEndianSize = ToLittleEndian32((uint32_t)srcLen); // Use srcLen directly
         fwrite(&littleEndianSize, sizeof(uint32_t), 1, fp);
 
         // Write compressed data
@@ -262,39 +263,18 @@ bool SerumData::LoadFromFile(const char *filename, const uint8_t flags)
             fclose(fp);
             return false;
         }
-        Log("cROMc compressed size %u", compressedSize); // Changed %lu to %u
+        Log("cROMc compressed size %u", compressedSize);
 
-        // Read compressed data
-        std::vector<unsigned char> compressedData(compressedSize);
-        if (fread(compressedData.data(), 1, compressedSize, fp) != compressedSize)
+        // Create a custom stream that decompresses on the fly
+        DecompressingIStream decompStream(fp, compressedSize, originalSize);
+
+        // Deserialize directly from the decompressing stream
         {
-            Log("Failed to read data from %s", filename);
-            fclose(fp);
-            return false;
-        }
-        fclose(fp);
-
-        // Decompress data - use consistent uint32_t
-        Log("Uncompressing %s", filename);
-        std::vector<unsigned char> decompressedData(originalSize);
-        mz_ulong dstLen = (mz_ulong) originalSize;
-
-        int status = uncompress(decompressedData.data(), &dstLen,
-                                compressedData.data(), (mz_ulong) compressedSize);
-
-        if (status != MZ_OK)
-        {
-            Log("Failed to uncompress %s, error code: %d", filename, status);
-            return false;
-        }
-
-        // Deserialize from memory buffer
-        std::istringstream ss(std::string(reinterpret_cast<const char *>(decompressedData.data()), dstLen), std::ios::binary);
-        {
-            cereal::PortableBinaryInputArchive archive(ss);
+            cereal::PortableBinaryInputArchive archive(decompStream);
             archive(*this);
         }
 
+        fclose(fp);
         return true;
     }
     catch (const std::exception &e)
