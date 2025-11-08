@@ -23,7 +23,7 @@ int main(int argc, const char* argv[]) {
               << std::endl;
 
     Serum_Dispose();
-    
+
     return 1;
   }
 
