@@ -1925,7 +1925,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 	bool rotationIsScene = false;
 
-	// lastfound is set by Identify_Frame, check if we have a new PUP trigger
+	// Check timeouts of pup triggers
 	uint32_t currentTimeout = (g_serumData.triggerIDs[lastfound][0] == 65432)
 		? MONOCHROME_FRAME_TRIGGER_TIMEOUT
 		: PUP_TRIGGER_REPEAT_TIMEOUT;
@@ -1955,6 +1955,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			mySerum.rotationtimer = 0;
 		}
 
+		// lastfound is set by Identify_Frame, check if we have a new PUP trigger
 		if (!sceneFrameRequested &&
 			(g_serumData.triggerIDs[lastfound][0] != lasttriggerID ||
 			lasttriggerTimestamp < (now - currentTimeout))) {
