@@ -48,6 +48,7 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 #endif
 
 #define PUP_TRIGGER_REPEAT_TIMEOUT 500 // 500 ms
+#define MONOCHROME_FRAME_TRIGGER_TIMEOUT 1 // 1ms
 
 #pragma warning(disable : 4996)
 
@@ -1924,6 +1925,11 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 	bool rotationIsScene = false;
 
+	// lastfound is set by Identify_Frame, check if we have a new PUP trigger
+	uint32_t currentTimeout = (g_serumData.triggerIDs[lastfound][0] == 65432)
+		? MONOCHROME_FRAME_TRIGGER_TIMEOUT
+		: PUP_TRIGGER_REPEAT_TIMEOUT;
+
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
 		monochromeMode = false;
@@ -1949,11 +1955,17 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			mySerum.rotationtimer = 0;
 		}
 
-		// lastfound is set by Identify_Frame, check if we have a new PUP trigger
-		if (!sceneFrameRequested && (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
+		if (!sceneFrameRequested &&
+			(g_serumData.triggerIDs[lastfound][0] != lasttriggerID ||
+			lasttriggerTimestamp < (now - currentTimeout))) {
+
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
-			if (lasttriggerID == 65432) monochromeMode = true;
+
+			if (lasttriggerID == 65432)
+				monochromeMode = true;
+		}
+
 
             if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
             {
