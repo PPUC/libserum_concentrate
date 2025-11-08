@@ -1913,12 +1913,6 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 	mySerum.triggerID = 0xffffffff;
 	mySerum.frameID = IDENTIFY_NO_FRAME;
 
-	if (g_serumData.sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
-	{
-		// Scene is active and not interruptable
-		return IDENTIFY_NO_FRAME;
-	}
-
 	// Let's first identify the incoming frame among the ones we have in the crom
 	uint32_t frameID = Identify_Frame(frame);
 	uint32_t now = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
@@ -1926,7 +1920,13 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 
 	if (frameID != IDENTIFY_NO_FRAME)
 	{
-		monochromeMode = false;
+		monochromeMode = (g_serumData.triggerIDs[lastfound][0] == 65432);
+
+		if (!monochromeMode && g_serumData.sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount && !sceneInterruptable)
+		{
+			// Scene is active and not interruptable
+			return IDENTIFY_NO_FRAME;
+		}
 
 		if (!sceneFrameRequested)
 		{
@@ -1950,17 +1950,16 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 		}
 
 		// lastfound is set by Identify_Frame, check if we have a new PUP trigger
-		if (!sceneFrameRequested && (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
+		if (!monochromeMode && !sceneFrameRequested && (g_serumData.triggerIDs[lastfound][0] != lasttriggerID || lasttriggerTimestamp < (now - PUP_TRIGGER_REPEAT_TIMEOUT))) {
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
-			if (lasttriggerID == 65432) monochromeMode = true;
 
-            if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
-            {
-                if (g_serumData.sceneGenerator->getSceneInfo(lasttriggerID, sceneFrameCount, sceneDurationPerFrame,
-                                               sceneInterruptable, sceneStartImmediately, sceneRepeatCount,
-                                               sceneEndFrame))
-                {
+			if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
+			{
+				if (g_serumData.sceneGenerator->getSceneInfo(lasttriggerID, sceneFrameCount, sceneDurationPerFrame,
+											sceneInterruptable, sceneStartImmediately, sceneRepeatCount,
+											sceneEndFrame))
+				{
 					memcpy(lastFrame, frame, g_serumData.fwidth * g_serumData.fheight);
 					//Log(DMDUtil_LogLevel_DEBUG, "Serum: trigger ID %lu found in scenes, frame count=%d, duration=%dms",
 					//    m_pSerum->triggerID, sceneFrameCount, sceneDurationPerFrame);
@@ -1972,8 +1971,8 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 					}
 					mySerum.rotationtimer = sceneDurationPerFrame;
 					rotationIsScene = true;
-                }
-            }
+				}
+			}
 		}
 
 		uint8_t nosprite[MAX_SPRITES_PER_FRAME], nspr;
@@ -2066,7 +2065,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			}
 
 			if (0 == mySerum.rotationtimer && g_serumData.sceneGenerator->isActive() && !sceneFrameRequested && sceneCurrentFrame >= sceneFrameCount &&
-				 g_serumData.sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
+				g_serumData.sceneGenerator->getAutoStartSceneInfo(sceneFrameCount, sceneDurationPerFrame, sceneInterruptable, sceneStartImmediately, sceneRepeatCount, sceneEndFrame))
 			{
 				mySerum.rotationtimer = g_serumData.sceneGenerator->getAutoStartTimer();
 				rotationIsScene = true;
