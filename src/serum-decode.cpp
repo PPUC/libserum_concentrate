@@ -1962,9 +1962,7 @@ SERUM_API uint32_t Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameR
 			lasttriggerID = mySerum.triggerID = g_serumData.triggerIDs[lastfound][0];
 			lasttriggerTimestamp = now;
 
-			if (lasttriggerID == 65432)
-				monochromeMode = true;
-		}
+			if (lasttriggerID == 65432) monochromeMode = true;
 
 
             if (g_serumData.sceneGenerator->isActive() && lasttriggerID < 0xffffffff)
