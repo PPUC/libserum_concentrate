@@ -48,7 +48,7 @@ int strcat_s(char* dest, size_t destsz, const char* src)
 #endif
 
 #define PUP_TRIGGER_REPEAT_TIMEOUT 500 // 500 ms
-#define MONOCHROME_FRAME_TRIGGER_TIMEOUT 1 // 1ms
+#define MONOCHROME_FRAME_TRIGGER_TIMEOUT 0 // has to be instant
 
 #pragma warning(disable : 4996)
 
