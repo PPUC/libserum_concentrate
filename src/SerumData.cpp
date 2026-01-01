@@ -17,27 +17,27 @@ SerumData::SerumData()
       cpal(0),
       isextraframe(0, true),
       cframes(0, false, true),
-      cframesn(0, false, true),
-      cframesnx(0, false, true),
+      cframes_v2(0, false, true),
+      cframes_v2_extra(0, false, true),
       dynamasks(255, false, true),
-      dynamasksx(255, false, true),
+      dynamasks_extra(255, false, true),
       dyna4cols(0),
-      dyna4colsn(0),
-      dyna4colsnx(0),
+      dyna4cols_v2(0),
+      dyna4cols_v2_extra(0),
       framesprites(255),
       spritedescriptionso(0),
       spritedescriptionsc(0),
       isextrasprite(0, true),
-      spriteoriginal(255),  // Do not compress because GetSpriteSize seems to
-                            // have an issue with it.
-      spritemaskx(255),  // Do not compress because GetSpriteSize seems to have
-                         // an issue with it.
+      spriteoriginal(255),    // Do not compress because GetSpriteSize seems to
+                              // have an issue with it.
+      spritemask_extra(255),  // Do not compress because GetSpriteSize seems to
+                              // have an issue with it.
       spritecolored(0, false, true),
-      spritecoloredx(0, false, true),
+      spritecolored_extra(0, false, true),
       activeframes(1),
       colorrotations(0),
-      colorrotationsn(0),
-      colorrotationsnx(0),
+      colorrotations_v2(0),
+      colorrotations_v2_extra(0),
       spritedetdwords(0),
       spritedetdwordpos(0),
       spritedetareas(0),
@@ -45,20 +45,20 @@ SerumData::SerumData()
       framespriteBB(0, false, true),
       isextrabackground(0, true),
       backgroundframes(0, false, true),
-      backgroundframesn(0, false, true),
-      backgroundframesnx(0, false, true),
+      backgroundframes_v2(0, false, true),
+      backgroundframes_v2_extra(0, false, true),
       backgroundIDs(0xffff),
       backgroundBB(0),
       backgroundmask(0, false, true),
-      backgroundmaskx(0, false, true),
-      dynashadowsdiro(0),
-      dynashadowscolo(0),
-      dynashadowsdirx(0),
-      dynashadowscolx(0),
+      backgroundmask_extra(0, false, true),
+      dynashadowsdir(0),
+      dynashadowscol(0),
+      dynashadowsdir_extra(0),
+      dynashadowscol_extra(0),
       dynasprite4cols(0),
-      dynasprite4colsx(0),
+      dynasprite4cols_extra(0),
       dynaspritemasks(255, false, true),
-      dynaspritemasksx(255, false, true),
+      dynaspritemasks_extra(255, false, true),
       sprshapemode(0) {
   sceneGenerator = new SceneGenerator();
 }
@@ -72,26 +72,26 @@ void SerumData::Clear() {
   compmasks.clear();
   cpal.clear();
   isextraframe.clear();
-  cframesn.clear();
-  cframesnx.clear();
+  cframes_v2.clear();
+  cframes_v2_extra.clear();
   cframes.clear();
   dynamasks.clear();
-  dynamasksx.clear();
+  dynamasks_extra.clear();
   dyna4cols.clear();
-  dyna4colsn.clear();
-  dyna4colsnx.clear();
+  dyna4cols_v2.clear();
+  dyna4cols_v2_extra.clear();
   framesprites.clear();
   spritedescriptionso.clear();
   spritedescriptionsc.clear();
   isextrasprite.clear();
   spriteoriginal.clear();
-  spritemaskx.clear();
+  spritemask_extra.clear();
   spritecolored.clear();
-  spritecoloredx.clear();
+  spritecolored_extra.clear();
   activeframes.clear();
   colorrotations.clear();
-  colorrotationsn.clear();
-  colorrotationsnx.clear();
+  colorrotations_v2.clear();
+  colorrotations_v2_extra.clear();
   spritedetareas.clear();
   spritedetdwords.clear();
   spritedetdwordpos.clear();
@@ -99,20 +99,20 @@ void SerumData::Clear() {
   framespriteBB.clear();
   isextrabackground.clear();
   backgroundframes.clear();
-  backgroundframesn.clear();
-  backgroundframesnx.clear();
+  backgroundframes_v2.clear();
+  backgroundframes_v2_extra.clear();
   backgroundIDs.clear();
   backgroundBB.clear();
   backgroundmask.clear();
-  backgroundmaskx.clear();
-  dynashadowsdiro.clear();
-  dynashadowscolo.clear();
-  dynashadowsdirx.clear();
-  dynashadowscolx.clear();
+  backgroundmask_extra.clear();
+  dynashadowsdir.clear();
+  dynashadowscol.clear();
+  dynashadowsdir_extra.clear();
+  dynashadowscol_extra.clear();
   dynasprite4cols.clear();
-  dynasprite4colsx.clear();
+  dynasprite4cols_extra.clear();
   dynaspritemasks.clear();
-  dynaspritemasksx.clear();
+  dynaspritemasks_extra.clear();
   sprshapemode.clear();
 }
 

@@ -65,7 +65,7 @@ class SerumData {
   uint8_t SerumVersion;
   uint16_t concentrateFileVersion;
   uint32_t fwidth, fheight;
-  uint32_t fwidthx, fheightx;
+  uint32_t fwidth_extra, fheight_extra;
   uint32_t nframes;
   uint32_t nocolors, nccolors;
   uint32_t ncompmasks, nmovmasks;
@@ -83,25 +83,25 @@ class SerumData {
   SparseVector<uint8_t> cpal;
   SparseVector<uint8_t> isextraframe;
   SparseVector<uint8_t> cframes;
-  SparseVector<uint16_t> cframesn;
-  SparseVector<uint16_t> cframesnx;
+  SparseVector<uint16_t> cframes_v2;
+  SparseVector<uint16_t> cframes_v2_extra;
   SparseVector<uint8_t> dynamasks;
-  SparseVector<uint8_t> dynamasksx;
+  SparseVector<uint8_t> dynamasks_extra;
   SparseVector<uint8_t> dyna4cols;
-  SparseVector<uint16_t> dyna4colsn;
-  SparseVector<uint16_t> dyna4colsnx;
+  SparseVector<uint16_t> dyna4cols_v2;
+  SparseVector<uint16_t> dyna4cols_v2_extra;
   SparseVector<uint8_t> framesprites;
   SparseVector<uint8_t> spritedescriptionso;
   SparseVector<uint8_t> spritedescriptionsc;
   SparseVector<uint8_t> isextrasprite;
   SparseVector<uint8_t> spriteoriginal;
-  SparseVector<uint8_t> spritemaskx;
+  SparseVector<uint8_t> spritemask_extra;
   SparseVector<uint16_t> spritecolored;
-  SparseVector<uint16_t> spritecoloredx;
+  SparseVector<uint16_t> spritecolored_extra;
   SparseVector<uint8_t> activeframes;
   SparseVector<uint8_t> colorrotations;
-  SparseVector<uint16_t> colorrotationsn;
-  SparseVector<uint16_t> colorrotationsnx;
+  SparseVector<uint16_t> colorrotations_v2;
+  SparseVector<uint16_t> colorrotations_v2_extra;
   SparseVector<uint32_t> spritedetdwords;
   SparseVector<uint16_t> spritedetdwordpos;
   SparseVector<uint16_t> spritedetareas;
@@ -109,20 +109,20 @@ class SerumData {
   SparseVector<uint16_t> framespriteBB;
   SparseVector<uint8_t> isextrabackground;
   SparseVector<uint8_t> backgroundframes;
-  SparseVector<uint16_t> backgroundframesn;
-  SparseVector<uint16_t> backgroundframesnx;
+  SparseVector<uint16_t> backgroundframes_v2;
+  SparseVector<uint16_t> backgroundframes_v2_extra;
   SparseVector<uint16_t> backgroundIDs;
   SparseVector<uint16_t> backgroundBB;
   SparseVector<uint8_t> backgroundmask;
-  SparseVector<uint8_t> backgroundmaskx;
-  SparseVector<uint8_t> dynashadowsdiro;
-  SparseVector<uint16_t> dynashadowscolo;
-  SparseVector<uint8_t> dynashadowsdirx;
-  SparseVector<uint16_t> dynashadowscolx;
+  SparseVector<uint8_t> backgroundmask_extra;
+  SparseVector<uint8_t> dynashadowsdir;
+  SparseVector<uint16_t> dynashadowscol;
+  SparseVector<uint8_t> dynashadowsdir_extra;
+  SparseVector<uint16_t> dynashadowscol_extra;
   SparseVector<uint16_t> dynasprite4cols;
-  SparseVector<uint16_t> dynasprite4colsx;
+  SparseVector<uint16_t> dynasprite4cols_extra;
   SparseVector<uint8_t> dynaspritemasks;
-  SparseVector<uint8_t> dynaspritemasksx;
+  SparseVector<uint8_t> dynaspritemasks_extra;
   SparseVector<uint8_t> sprshapemode;
 
   SceneGenerator *sceneGenerator;
@@ -139,19 +139,22 @@ class SerumData {
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(rname, SerumVersion, fwidth, fheight, fwidthx, fheightx, nframes,
-       nocolors, nccolors, ncompmasks, nmovmasks, nsprites, nbackgrounds,
-       is256x64, hashcodes, shapecompmode, compmaskID, movrctID, compmasks,
-       movrcts, cpal, isextraframe, cframes, cframesn, cframesnx, dynamasks,
-       dynamasksx, dyna4cols, dyna4colsn, dyna4colsnx, framesprites,
-       spritedescriptionso, spritedescriptionsc, isextrasprite, spriteoriginal,
-       spritemaskx, spritecolored, spritecoloredx, activeframes, colorrotations,
-       colorrotationsn, colorrotationsnx, spritedetdwords, spritedetdwordpos,
-       spritedetareas, triggerIDs, framespriteBB, isextrabackground,
-       backgroundframes, backgroundframesn, backgroundframesnx, backgroundIDs,
-       backgroundBB, backgroundmask, backgroundmaskx, dynashadowsdiro,
-       dynashadowscolo, dynashadowsdirx, dynashadowscolx, dynasprite4cols,
-       dynasprite4colsx, dynaspritemasks, dynaspritemasksx, sprshapemode);
+    ar(rname, SerumVersion, fwidth, fheight, fwidth_extra, fheight_extra,
+       nframes, nocolors, nccolors, ncompmasks, nmovmasks, nsprites,
+       nbackgrounds, is256x64, hashcodes, shapecompmode, compmaskID, movrctID,
+       compmasks, movrcts, cpal, isextraframe, cframes, cframes_v2,
+       cframes_v2_extra, dynamasks, dynamasks_extra, dyna4cols, dyna4cols_v2,
+       dyna4cols_v2_extra, framesprites, spritedescriptionso,
+       spritedescriptionsc, isextrasprite, spriteoriginal, spritemask_extra,
+       spritecolored, spritecolored_extra, activeframes, colorrotations,
+       colorrotations_v2, colorrotations_v2_extra, spritedetdwords,
+       spritedetdwordpos, spritedetareas, triggerIDs, framespriteBB,
+       isextrabackground, backgroundframes, backgroundframes_v2,
+       backgroundframes_v2_extra, backgroundIDs, backgroundBB, backgroundmask,
+       backgroundmask_extra, dynashadowsdir, dynashadowscol,
+       dynashadowsdir_extra, dynashadowscol_extra, dynasprite4cols,
+       dynasprite4cols_extra, dynaspritemasks, dynaspritemasks_extra,
+       sprshapemode);
 
     if constexpr (Archive::is_saving::value) {
       ar(sceneGenerator ? sceneGenerator->getSceneData()
@@ -165,20 +168,20 @@ class SerumData {
         isextrasprite.clearIndex();
       }
 
-      cframesnx.setParent(&isextraframe);
-      dynamasksx.setParent(&isextraframe);
-      dyna4colsnx.setParent(&isextraframe);
-      spritemaskx.setParent(&isextrasprite);
-      spritecoloredx.setParent(&isextrasprite);
-      colorrotationsnx.setParent(&isextraframe);
+      cframes_v2_extra.setParent(&isextraframe);
+      dynamasks_extra.setParent(&isextraframe);
+      dyna4cols_v2_extra.setParent(&isextraframe);
+      spritemask_extra.setParent(&isextrasprite);
+      spritecolored_extra.setParent(&isextrasprite);
+      colorrotations_v2_extra.setParent(&isextraframe);
       framespriteBB.setParent(&framesprites);
-      backgroundframesnx.setParent(&isextrabackground);
+      backgroundframes_v2_extra.setParent(&isextrabackground);
       backgroundmask.setParent(&backgroundIDs);
-      backgroundmaskx.setParent(&backgroundIDs);
-      dynashadowsdirx.setParent(&isextraframe);
-      dynashadowscolx.setParent(&isextraframe);
-      dynasprite4colsx.setParent(&isextraframe);
-      dynaspritemasksx.setParent(&isextraframe);
+      backgroundmask_extra.setParent(&backgroundIDs);
+      dynashadowsdir_extra.setParent(&isextraframe);
+      dynashadowscol_extra.setParent(&isextraframe);
+      dynasprite4cols_extra.setParent(&isextraframe);
+      dynaspritemasks_extra.setParent(&isextraframe);
       backgroundBB.setParent(&backgroundIDs);
 
       std::vector<SceneData> loadedScenes;

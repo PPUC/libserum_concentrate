@@ -99,7 +99,7 @@ typedef struct _Serum_Frame_Struc {
 const int MAX_DYNA_4COLS_PER_FRAME =
     16;  // max number of color sets for dynamic content for each frame (old
          // version)
-const int MAX_DYNA_SETS_PER_FRAMEN =
+const int MAX_DYNA_SETS_PER_FRAME_V2 =
     32;  // max number of color sets for dynamic content for each frame (new
          // version)
 const int MAX_DYNA_SETS_PER_SPRITE =
@@ -111,7 +111,7 @@ const int MAX_SPRITES_PER_FRAME =
     32;  // maximum amount of sprites to look for per frame
 const int MAX_COLOR_ROTATIONS =
     8;  // maximum amount of color rotations per frame
-const int MAX_COLOR_ROTATIONN =
+const int MAX_COLOR_ROTATION_V2 =
     4;  // maximum number of new color rotations per frame
 const int MAX_LENGTH_COLOR_ROTATION =
     64;  // maximum number of new colors in a rotation
