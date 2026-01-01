@@ -23,9 +23,9 @@ struct SceneData {
   uint8_t autoStart = 0;  // 0 - no autostart, >= 1 - start this scene after x
                           // seconds of inactivity (no new frames), only use
                           // once, could be combined with frame groups
-  uint8_t endFrame = 0;  // 0 - when scene is finished, show last frame of the
-                         // scene until a new frame is matched, 1 - black
-                         // screen, 2 - show last frame before scene started
+  uint8_t endFrame = 0;   // 0 - when scene is finished, show last frame of the
+                          // scene until a new frame is matched, 1 - black
+                          // screen, 2 - show last frame before scene started
 
   // Serialisierungsfunktion für cereal
   template <class Archive>

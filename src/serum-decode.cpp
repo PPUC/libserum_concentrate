@@ -2077,9 +2077,10 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
           std::chrono::system_clock::now().time_since_epoch())
           .count());
   bool rotationIsScene = false;
-  if (is_real_machine() &&
-      (showStatusMessages = (g_serumData.triggerIDs[lastfound][0] > 0xFF98))) {
-    ignoreUnknownFramesTimeout = 0x2000;
+  if (is_real_machine()) {
+    showStatusMessages = (g_serumData.triggerIDs[lastfound][0] > 0xff98 &&
+                          g_serumData.triggerIDs[lastfound][0] < 0xffffffff);
+    if (showStatusMessages) ignoreUnknownFramesTimeout = 0x2000;
   }
   if (frameID != IDENTIFY_NO_FRAME && !showStatusMessages) {
     monochromeMode = (g_serumData.triggerIDs[lastfound][0] == 65432);
@@ -2274,7 +2275,6 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
     mySerum.flags = FLAG_RETURNED_32P_FRAME_OK;
     mySerum.width32 = g_serumData.fwidth;
     mySerum.width64 = 0;
-    mySerum.triggerID = 65432;
     mySerum.frameID = 0xfffffffd;  // monochrome frame ID
 
     // disable render features like rotations
