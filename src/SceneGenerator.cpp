@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "TimeUtils.h"
+
 std::string formatNumber(int num, int width) {
   std::string s = std::to_string(num);
   if (s.length() < width) {
@@ -208,10 +210,7 @@ uint16_t SceneGenerator::generateFrame(uint16_t sceneId, uint16_t frameIndex,
                                        bool disableTimer) {
   static uint32_t lastTime = 0;
   if (frameIndex == 0) lastTime = 0;  // Reset timer for new scene
-  uint32_t now = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  uint32_t now = GetMonotonicTimeMs();
 
   auto it = std::find_if(
       m_sceneData.begin(), m_sceneData.end(),

@@ -2,6 +2,7 @@
 
 #include "serum-decode.h"
 
+#include "TimeUtils.h"
 #include <miniz/miniz.h>
 
 #include <algorithm>
@@ -112,10 +113,7 @@ bool cromloaded = false;  // is there a crom loaded?
 bool generateCRomC = true;
 uint32_t lastfound = 0;  // last frame ID identified
 uint32_t lastframe_full_crc = 0;
-uint32_t lastframe_found = static_cast<uint32_t>(
-    std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch())
-        .count());
+uint32_t lastframe_found = GetMonotonicTimeMs();
 uint32_t lasttriggerID = 0xffffffff;  // last trigger ID found
 uint32_t lasttriggerTimestamp = 0;
 bool isrotation = true;     // are there rotations to send
@@ -390,10 +388,7 @@ nofail:
 
 void Full_Reset_ColorRotations(void) {
   memset(colorshifts, 0, MAX_COLOR_ROTATIONS * sizeof(uint32_t));
-  colorrotseruminit = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  colorrotseruminit = GetMonotonicTimeMs();
   for (int ti = 0; ti < MAX_COLOR_ROTATIONS; ti++)
     colorshiftinittime[ti] = colorrotseruminit;
   memset(colorshifts32, 0, MAX_COLOR_ROTATION_V2 * sizeof(uint32_t));
@@ -1953,10 +1948,7 @@ uint32_t Serum_ColorizeWithMetadatav1(uint8_t* frame) {
   // Let's first identify the incoming frame among the ones we have in the crom
   uint32_t frameID = Identify_Frame(frame);
   mySerum.frameID = IDENTIFY_NO_FRAME;
-  uint32_t now = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  uint32_t now = GetMonotonicTimeMs();
 
   if (frameID != IDENTIFY_NO_FRAME) {
     lastframe_found = now;
@@ -2072,10 +2064,7 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
 
   // Let's first identify the incoming frame among the ones we have in the crom
   uint32_t frameID = Identify_Frame(frame);
-  uint32_t now = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  uint32_t now = GetMonotonicTimeMs();
   bool rotationIsScene = false;
   if (is_real_machine()) {
     showStatusMessages = (g_serumData.triggerIDs[lastfound][0] > 0xff98 &&
@@ -2303,10 +2292,7 @@ SERUM_API uint32_t Serum_Colorize(uint8_t* frame) {
 
 uint32_t Serum_ApplyRotationsv1(void) {
   uint32_t isrotation = 0;
-  uint32_t now = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  uint32_t now = GetMonotonicTimeMs();
   for (int ti = 0; ti < MAX_COLOR_ROTATIONS; ti++) {
     if (mySerum.rotations[ti * 3] == 255) continue;
     uint32_t elapsed = now - colorshiftinittime[ti];
@@ -2409,10 +2395,7 @@ uint32_t Serum_ApplyRotationsv2(void) {
 
   uint32_t isrotation = 0;
   uint32_t sizeframe;
-  uint32_t now = static_cast<uint32_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  uint32_t now = GetMonotonicTimeMs();
   if (mySerum.frame32) {
     sizeframe = 32 * mySerum.width32;
     if (mySerum.modifiedelements32)
