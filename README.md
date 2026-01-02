@@ -9,3 +9,4 @@ Some of these new features are
 - support of the cROMc format which leads to faster loading times and a way lower memory footprint
 - better support for iOS and Android
 - rotation scenes
+- monochrome mode for not colorized frames like error messages, system diagnostics, settings menu, tools like motor adjustments, coin door open warnings or older or patched ROM versions
