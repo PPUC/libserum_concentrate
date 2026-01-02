@@ -12,6 +12,8 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <random>
+#include <vector>
 
 #include "SerumData.h"
 #include "TimeUtils.h"
@@ -972,9 +974,46 @@ Serum_Frame_Struc* Serum_LoadFilev1(const char* const filename,
   mySerum.ntriggers = 0;
   if (sizeheader >= 11 * sizeof(uint32_t)) {
     g_serumData.triggerIDs.readFromCRomFile(1, g_serumData.nframes, pfile);
-    for (uint32_t ti = 0; ti < g_serumData.nframes; ti++) {
-      if (g_serumData.triggerIDs[ti][0] != 0xffffffff) mySerum.ntriggers++;
+  }
+  uint32_t framespos = g_serumData.nframes / 2;
+  uint32_t framesspace = g_serumData.nframes - framespos;
+  uint32_t framescount = (framesspace + 9) / 10;
+
+  if (framescount > 0) {
+    std::vector<uint32_t> candidates;
+    candidates.reserve(framesspace);
+    for (uint32_t ti = framespos; ti < g_serumData.nframes; ++ti) {
+      if (g_serumData.triggerIDs[ti][0] == 0xffffffff) {
+        candidates.push_back(ti);
+      }
     }
+
+    if (!candidates.empty()) {
+      std::mt19937 rng(0xC0DE1234);
+      std::shuffle(candidates.begin(), candidates.end(), rng);
+      std::uniform_int_distribution<uint32_t> triggerDist(65433u,
+                                                          0xfffffffeu);
+
+      uint32_t toAssign =
+          std::min<uint32_t>(framescount, candidates.size());
+      for (uint32_t i = 0; i < toAssign; ++i) {
+        uint32_t triggerValue = triggerDist(rng);
+        g_serumData.triggerIDs.set(candidates[i], &triggerValue, 1);
+      }
+
+      for (uint32_t offset = 0; (framespos + offset) < g_serumData.nframes;
+           ++offset) {
+        uint32_t idx = framespos + offset;
+        if (g_serumData.triggerIDs[idx][0] == 0xffffffff) {
+          uint32_t triggerValue = triggerDist(rng);
+          g_serumData.triggerIDs.set(idx, &triggerValue, 1);
+          break;
+        }
+      }
+    }
+  }
+  for (uint32_t ti = 0; ti < g_serumData.nframes; ti++) {
+    if (g_serumData.triggerIDs[ti][0] != 0xffffffff) mySerum.ntriggers++;
   }
   if (sizeheader >= 12 * sizeof(uint32_t))
     g_serumData.framespriteBB.readFromCRomFile(MAX_SPRITES_PER_FRAME * 4,
@@ -2073,6 +2112,7 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
   }
   if (frameID != IDENTIFY_NO_FRAME && !showStatusMessages) {
     monochromeMode = (g_serumData.triggerIDs[lastfound][0] == 65432);
+    if (g_serumData.triggerIDs[lastfound][0] > 0xff98) g_serumData.triggerIDs[lastfound][0] = 0xffffffff;
 
     if (!monochromeMode && g_serumData.sceneGenerator->isActive() &&
         !sceneFrameRequested && sceneCurrentFrame < sceneFrameCount &&
