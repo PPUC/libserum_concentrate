@@ -25,7 +25,7 @@ jobs:
           VERSION_PATCH=$(grep -Eo "SERUM_VERSION_PATCH\s+[0-9]+" src/serum-version.h | grep -Eo "[0-9]+")
           VERSION_CONCENTRATE=$(grep -Eo "SERUM_CONCENTRATE_VERSION\s+[0-9]+" src/serum-version.h | grep -Eo "[0-9]+")
           SERUM_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
-          TAG="${SERUM_VERSION}-concentrate.${VERSION_CONCENTRATE}"
+          TAG="${SERUM_VERSION}"
           echo "${TAG}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "serumversion=${SERUM_VERSION}" >> $GITHUB_OUTPUT
