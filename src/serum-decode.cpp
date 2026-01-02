@@ -2,7 +2,6 @@
 
 #include "serum-decode.h"
 
-#include "TimeUtils.h"
 #include <miniz/miniz.h>
 
 #include <algorithm>
@@ -15,6 +14,7 @@
 #include <optional>
 
 #include "SerumData.h"
+#include "TimeUtils.h"
 #include "serum-version.h"
 
 #if defined(__APPLE__)
@@ -2066,7 +2066,7 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
   uint32_t frameID = Identify_Frame(frame);
   uint32_t now = GetMonotonicTimeMs();
   bool rotationIsScene = false;
-  if (is_real_machine()) {
+  if (is_real_machine() && !showStatusMessages) {
     showStatusMessages = (g_serumData.triggerIDs[lastfound][0] > 0xff98 &&
                           g_serumData.triggerIDs[lastfound][0] < 0xffffffff);
     if (showStatusMessages) ignoreUnknownFramesTimeout = 0x2000;
@@ -2264,6 +2264,7 @@ Serum_ColorizeWithMetadatav2(uint8_t* frame, bool sceneFrameRequested = false) {
     mySerum.flags = FLAG_RETURNED_32P_FRAME_OK;
     mySerum.width32 = g_serumData.fwidth;
     mySerum.width64 = 0;
+    mySerum.triggerID = 0xffffffff;
     mySerum.frameID = 0xfffffffd;  // monochrome frame ID
 
     // disable render features like rotations
