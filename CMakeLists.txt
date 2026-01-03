@@ -123,6 +123,7 @@ if(BUILD_SHARED)
    install(FILES
       src/serum.h
       src/serum-decode.h
+      src/TimeUtils.h
       DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
@@ -155,6 +156,7 @@ if(BUILD_STATIC)
    install(FILES
       src/serum.h
       src/serum-decode.h
+      src/TimeUtils.h
       DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
    if(PLATFORM STREQUAL "win" OR PLATFORM STREQUAL "macos" OR PLATFORM STREQUAL "linux")
